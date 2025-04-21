@@ -1,11 +1,6 @@
 # Table of contents
 
-* [Daily Notes](README.md)
-* [CIFS mount](cifs-mount.md)
-* [/etc/hosts vs /etc/resolv.conf](etc-hosts-vs-etc-resolv.conf.md)
-* [Http & Https](http-and-https.md)
-* [Let'sEncrypt certbot SSL](letsencrypt-certbot-ssl.md)
-* [GitLab access issue](gitlab-access-issue.md)
-* [SSLConnectionIssue\_CASA](sslconnectionissue_casa.md)
-* [Azure Across Account Disk Transfer](azure-across-account-disk-transfer.md)
-* [S3 Transfer Across Account](s3-transfer-across-account.md)
+* [Page1: Introduction](README.md)
+* [Page2: Container Orchestration](page2-container-orchestration.md)
+* [Page3: Kubernetes Architecture](page3-kubernetes-architecture.md)
+* [Page4: Minikube](page4-minikube.md)
