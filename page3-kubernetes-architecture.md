@@ -1,6 +1,6 @@
 # Page3: Kubernetes Architecture
 
-<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption><p><a href="https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/">https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/</a></p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption><p><a href="https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/">https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/</a></p></figcaption></figure>
 
 <figure><img src=".gitbook/assets/image (2).png" alt=""><figcaption><p>K8s Architecture Control Plane</p></figcaption></figure>
 
@@ -213,16 +213,15 @@ The Kubernetes scheduler is in charge of scheduling pods onto nodes. It works li
 2. The scheduler notices that the new pod you created doesn’t have a node assigned to it
 3. The scheduler assigns a node to the pod
 
-#### How[ the scheduler works, in English](https://jvns.ca/blog/2017/07/27/how-does-the-kubernetes-scheduler-work/#how-the-scheduler-works-in-english) <a href="#how-the-scheduler-works-in-english" id="how-the-scheduler-works-in-english"></a>
+#### How[ the scheduler works](https://jvns.ca/blog/2017/07/27/how-does-the-kubernetes-scheduler-work/#how-the-scheduler-works-in-english) <a href="#how-the-scheduler-works-in-english" id="how-the-scheduler-works-in-english"></a>
 
 1. At the beginning, every pod that needs scheduling gets added to a queue
 2. When new pods are created, they also get added to the queue
 3. The scheduler continuously takes pods off that queue and schedules them
-4. That’s it
 
 One interesting thing here is that, if for whatever reason a pod **fails** to get scheduled, there’s nothing in here yet that would make the scheduler retry. It’d get taken off the queue, it fails scheduling, and that’s it. It lost its only chance! (unless you restart the scheduler, in which case everything will get added to the pod queue again)
 
-Of course, the scheduler is smarter than that – when a pod fails to schedule, in general, it calls an error handler, like this:
+Of course, the **scheduler is smarter than that** – when a pod fails to schedule, in general, it calls an error handler, like this:
 
 ```go
 host, err := sched.config.Algorithm.Schedule(pod, sched.config.NodeLister)
@@ -231,7 +230,7 @@ if err != nil {
 	sched.config.Error(pod, err)
 ```
 
-This `sched.config.Error` function call adds the pod back to the queue of things that need to be scheduled, and so it tries again.
+This `sched.config.Error` **function call adds the pod back to the queue** of things that need to be scheduled, and so it tries again.
 
 
 
@@ -257,6 +256,11 @@ Use **Services** for all pod-to-pod or external communications.
 **CoreDNS** resolves service names to service IPs.
 
 A Service in Kubernetes is a fundamental abstraction that solves a critical problem in container orchestration: **how to reliably connect to pods that are ephemeral and dynamically scheduled.** Let me walk you through what Services are and how they work.
+
+Example: A service named `testsvc` can front multiple database pods.
+
+* The frontend app only needs to talk to `testsvc`, not the individual pods.
+* Service forwards traffic to the backend pods using round-robin (or similar) load balancing.
 
 #### The Core Purpose of Services
 
@@ -293,6 +297,14 @@ Selects all pods with the label app: my-app
 Forward traffic from port 80 on its virtual IP to port 8080 on the pods
 It is only accessible within the cluster (ClusterIP type)
 ```
+
+#### **Endpoints and Endpoint Controller**
+
+* Each service has a set of **endpoints** (the pods it forwards traffic to).
+* The **Endpoint Controller** keeps the endpoint list updated:
+  * Adds new pods.
+  * Removes terminated pods.
+  * Updates changed IPs.
 
 #### **Kube Proxy**
 
@@ -345,7 +357,7 @@ When a pod requests 10.96.0.10:80, the node's kernel networking stack, configure
 
 #### kube-proxy Visualized in the Cluster Architecture
 
-kube-proxy sits alongside the kubelet on every node in the cluster:
+Kube-proxy sits alongside the kubelet on every node in the cluster:
 
 1. The API server stores Service and Endpoint information in etcd
 2. kube-proxy watches the API server for changes to this information
@@ -361,7 +373,7 @@ Together, Services and kube-proxy create a powerful abstraction that hides all t
 
 This mechanism is fundamental to Kubernetes networking, allowing applications to communicate reliably despite the dynamic nature of container orchestration.
 
-#### **P Address Assignment**
+#### **IP Address Assignment**
 
 * IP addresses are assigned as follows:
   * **Pods:** Assigned from a **CIDR block** via a **CNI plugin** (Container Network Interface).
@@ -385,12 +397,93 @@ This mechanism is fundamental to Kubernetes networking, allowing applications to
 #### **Container Runtime Environment**
 
 * Referring to the software layer that enables containers to run on an operating system
-* Containers are [not first-class objects ](#user-content-fn-1)[^1]in the Linux kernel
+* Containers are [not first-class objects ](#user-content-fn-1)[^1]/native feature in the Linux kernel.
 * Containers are fundamentally composed of several underlying kernel primitives: **namespaces** (who you are allowed to talk to), **cgroups** (the number of resources you are allowed to use), and LSMs (Linux Security Modules—what you are allowed to do). Together, these kernel primitives allow us to set up secure, isolated, and metered execution environments for our processes
 * Creating these environments manually each time we want to create a new isolated process would be tiresome and error-prone
 * To avoid this, all the components have been bundled together in a concept called a **container**
-* The **container runtime** is the software that is responsible for running these containers
+* The **container runtime** is the software that is responsible for running these containers. It is a high-level container runtime, which uses a low-level runtime like [**runc**](#user-content-fn-2)[^2], which **manages/responsible** for the most **fundamental** aspects of container execution, such as creating namespaces, isolating processes, and managing the container's filesystem. Runc is a command-line[^3] tool
 * The runtime executes the container, telling the kernel to assign resource limits, create isolation layers (for processes, networking, and filesystems), and so on, using a cocktail of mechanisms like control groups (cgroups), namespaces, capabilities, SELinux, etc
+* podman, containerd, dockerd, cri-o
+* runc, crun, kata-runtime, gVisor
+
+
+
+
+
+### **CRI (Container Runtime Interface)**
+
+* **CRI** was introduced in Kubernetes 1.5 and acts as a bridge between the kubelet and the container runtime
+* High-level container runtimes that want to integrate with Kubernetes are expected to implement CRI.
+* When kubelet wants to run the workload, it uses **CRI** to communicate with the **container runtime** running on that same node
+* In this way, CRI is simply an abstraction layer or API that allows you to switch out container runtime implementations instead of having them baked into the kubelet
+* K8s, after trying to **support multiple versions of kubelet for different container runtime environments**, and trying to keep up with the Docker interface changes, it decided to **set a standard interface (CRI)** to be implemented by all container runtimes
+* This is to avoid a large codebase for kubelet for supporting different Container Runtimes
+* To implement a CRI, a container runtime environment must be compliant with the **Open Container Initiative (OCI)**
+* OCI includes a set of specifications that container runtime engines must implement, and a seed container runtime engine called **runc**, a CLI tool for spawning and running containers according to the OCI specification.
+
+
+
+### What is a shim? <a href="#what-is-a-shim" id="what-is-a-shim"></a>
+
+[A container runtime shim](https://iximiuz.com/en/posts/journey-from-containerization-to-orchestration-and-beyond/#runtime-shims) is a piece of software that resides in between [a container manager (_containerd_, _cri-o_, _podman_)](https://iximiuz.com/en/posts/journey-from-containerization-to-orchestration-and-beyond/#container-management) and [a container runtime (_runc_, _crun_)](https://iximiuz.com/en/posts/journey-from-containerization-to-orchestration-and-beyond/#container-runtimes) solving the integration problem of these counterparts.
+
+### The Docker API Mismatch
+
+Here's where the problem arose: Docker was not designed with CRI in mind and used a different API(REST) structure than what CRI(gRPC) specified. Docker's API:
+
+* Had a different object model (focusing on containers, not pods)
+* Used a REST API instead of gRPC
+* Had different command structures and semantics
+* Didn't have a direct concept of pods
+
+### What is Dockershim?
+
+To address this mismatch while maintaining backward compatibility, Kubernetes created "dockershim" - a translation layer that:
+
+1. Implemented the CRI API that Kubernetes expects
+2. Translated CRI calls into Docker API calls
+3. Translated Docker API responses back into CRI responses
+4. Was built directly into the Kubernetes kubelet code
+
+{% code overflow="wrap" fullWidth="true" %}
+```
+Kubernetes kubelet → dockershim (built into kubelet) → Docker daemon → containerd → runc
+```
+{% endcode %}
+
+### CRI-dockerd vs. CRI-containerd
+
+#### CRI-containerd
+
+containerd is a high-level container runtime that was extracted from Docker and designed to be embedded. Eventually, containerd implemented the CRI directly, which meant:
+
+1. containerd could communicate directly with Kubernetes via CRI
+2.  The communication flow became simpler:
+
+    ```
+    Kubernetes kubelet → containerd (via CRI) → runc
+    ```
+3. This eliminated one translation layer and the dependency on Docker
+
+#### CRI-dockerd
+
+After Kubernetes **removed** the built-in dockershim in version 1.24 (April 2022), Docker created a separate project called "cri-dockerd" that:
+
+1. Extracts the dockershim functionality into an external adapter
+2. Continues to translate between CRI and Docker API
+3. Allows clusters to keep using Docker Engine if needed
+
+The communication flow with cri-dockerd is:
+
+{% code overflow="wrap" fullWidth="true" %}
+```
+Kubernetes kubelet → cri-dockerd (external shim) → Docker daemon → containerd → runc
+```
+{% endcode %}
+
+### &#x20;                             &#x20;
+
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
 
 ### Kubectl
 
@@ -428,7 +521,13 @@ kubectl api-resources
 
 K8s
 
+
+
 [https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/](https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/)
+
+[https://jvns.ca/blog/2016/09/15/whats-up-with-containers-docker-and-rkt/](https://jvns.ca/blog/2016/09/15/whats-up-with-containers-docker-and-rkt/)
+
+[https://jvns.ca/blog/2016/10/26/running-container-without-docker/](https://jvns.ca/blog/2016/10/26/running-container-without-docker/)
 
 Controller:
 
@@ -462,6 +561,14 @@ K8 Objects:
 
 [https://kodekloud.com/blog/kubernetes-objects/](https://kodekloud.com/blog/kubernetes-objects/)
 
+Runtime:
+
+[https://www.devoriales.com/post/318/understanding-kubernetes-container-runtime-cri-containerd-and-runc-explained](https://www.devoriales.com/post/318/understanding-kubernetes-container-runtime-cri-containerd-and-runc-explained)
+
+[https://iximiuz.com/en/posts/implementing-container-runtime-shim/](https://iximiuz.com/en/posts/implementing-container-runtime-shim/)
+
+[https://stackoverflow.com/questions/41645665/how-containerd-compares-to-runc](https://stackoverflow.com/questions/41645665/how-containerd-compares-to-runc)
+
 Claude:
 
 [https://claude.ai/share/e25517b9-b749-4bfc-a37b-ea4b66022072](https://claude.ai/share/e25517b9-b749-4bfc-a37b-ea4b66022072)
@@ -478,3 +585,8 @@ Claude:
     * **Capabilities, SELinux, AppArmor, seccomp**, etc. – for security
 
     So, the **Linux kernel provides the building blocks**, and **container runtimes (like Docker or containerd)** assemble those into what we know as containers.
+
+[^2]: lightweight universal, OCI-compliant container runtime.\
+    [https://github.com/opencontainers/runc](https://github.com/opencontainers/runc)
+
+[^3]: runc --help
