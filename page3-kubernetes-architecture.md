@@ -4,20 +4,20 @@
 
 <figure><img src=".gitbook/assets/image (2).png" alt=""><figcaption><p>K8s Architecture Control Plane</p></figcaption></figure>
 
-### **Master Node & Control Plane**
+## **Master Node / Control Plane**
 
 <figure><img src=".gitbook/assets/image (5).png" alt=""><figcaption></figcaption></figure>
 
 #### Key Points:
 
-* **Master is responsible for managing the complete cluster.**
+* **The master is responsible for managing the complete cluster.**
 * **Accessing the master node:** Can be done via **CLI, GUI, or API**.
 * **Responsibilities of the master:**
   * Monitors the nodes in the cluster.
   * Orchestrates containers on the worker nodes.
 * **High Availability:** Multiple master nodes can be configured to achieve **fault tolerance**.
 * **Access Point:** Master node acts as the access point for admins and users to **schedule** and **deploy** containers.
-* **Components of the Control Plane:**
+* **Components of the Control Plane/Master Node:**
   * **ETCD**
   * **Scheduler**
   * **Controller**
@@ -31,7 +31,7 @@ These four components together are known as the **Control Plane**.
 
 * Exposes **Kubernetes APIs** and acts as the **frontend for the control plane**.
 * Listens to updates or queries via CLI tools like **kubectl**.
-* **Kubectl communicates** with the API Server to inform what actions need to be performed, like **creating or deleting pods**.
+* **Kubectl communicates** with the API Server to inform it what actions need to be performed, like **creating or deleting pods**.
 * **Validates requests** and then forwards them to the appropriate components.
 * **All requests must go through the API Server**; direct access to the cluster is not allowed.
 
@@ -41,7 +41,7 @@ These four components together are known as the **Control Plane**.
 
 * **Acts as the brain** behind orchestration.
 * Responsible for **monitoring and reacting** when nodes, containers, or endpoints go down.
-* Makes decisions to **bring up new containers** when needed.
+* Makes decisions to **bring up new containers** when needed to maintain the cluster's desired state.
 * Runs **control loops** to maintain the cluster’s desired state (deployments, replicas, node status, etc.).
 
 **Examples of controllers:**
@@ -62,10 +62,12 @@ When the Controller Manager detects a deviation from the desired state, it initi
 
 #### Step 1: Detection of State Deviation
 
-The Controller Manager doesn't directly observe the cluster state. Instead, each controller within the Controller Manager watches the API Server for changes to specific resources they're responsible for. This detection happens through:
+The Controller Manager doesn't directly observe the cluster state. Instead, **each controller within the Controller Manager watches the API Server for changes to specific resources** they're responsible for. This detection happens through:
 
-* **Watch Mechanisms**: Controllers establish watch connections to the API Server, receiving near real-time notifications when resources change.
-* **Periodic Resync**: Even without changes, controllers periodically fetch all resources they care about to ensure nothing is missed.
+* **Watch Mechanisms**: Controllers establish watch connections to the API Server, receiving near real-time notifications when resources change.A watch connection is a persistent HTTP connection between a controller and the Kubernetes API server that uses a streaming protocol.
+* **Periodic Resync**: Even without changes, controllers periodically fetch all resources they care about to ensure nothing is missed.Periodic resync is a process where a controller, regardless of watch events received, periodically retrieves a complete fresh list of all resources it's responsible for from the API server periodically.Its a regular LIST operation to the API server.
+
+If controllers have watch connections, why do they need periodic resyncs.
 
 For example, the ReplicaSet controller continuously monitors the current pod count against the desired count specified in the ReplicaSet definition.
 
@@ -81,15 +83,15 @@ When a deviation is detected, the Controller Manager does not inform any other c
 
 The Controller Manager itself doesn't make direct changes to the cluster infrastructure. Instead:
 
-1. It creates, updates, or deletes resource objects through the API Server.
-2. The API Server validates these changes, persists them to etcd, and notifies relevant components.
+1. It **creates**, updates, or deletes resource objects through the API Server.
+2. The API Server **validates** these changes, persists them to etcd, and notifies relevant components.
 3. Other components (like the Scheduler or kubelet) respond to these changes.
 
 For example, if a ReplicaSet should have 5 pods but only 3 are running:
 
 1. The ReplicaSet controller creates 2 new Pod objects via the API Server.
 2. The API Server stores these in etcd.
-3. The Scheduler notices the unscheduled pods and assigns them to nodes.
+3. The **Scheduler notices the unscheduled** pods and assigns them to nodes.
 4. The kubelet on the selected nodes creates the actual containers.
 
 #### Step 4: Handling Failures
@@ -97,10 +99,10 @@ For example, if a ReplicaSet should have 5 pods but only 3 are running:
 If the Controller Manager encounters issues during reconciliation:
 
 1. It typically uses exponential backoff to retry failed operations.
-2. It logs events that administrators can view (using `kubectl describe` or in the events stream).
+2. It **logs events** that administrators can view (using **`kubectl describe`** or in the events stream.
 3. It may mark resources with specific status conditions to indicate problems.
 
-### Concrete Example: Node Failure Scenario
+### Example: Node Failure Scenario
 
 Let's trace through what happens when a node fails:
 
@@ -153,24 +155,24 @@ The remarkable aspect of this design is that there is no central orchestrator. E
 * When you have **multiple nodes and multiple masters** in your cluster, etcd stores all that information across all nodes in a **distributed manner**.
 * Information in etcd is typically formatted in **human-readable YAML**.
 
-Every component in Kubernetes (the API server, the scheduler, the kubelet, the controller manager, whatever) is stateless.
+Every component in Kubernetes (the API server, the scheduler, the kubelet, the controller manager, whatever) is **stateless**.
 
 ## Understanding "Stateless" Components in Kubernetes Architecture
 
-When we say Kubernetes components are "stateless," we're highlighting a fundamental architectural principle that shapes how the entire system works. Let me explain what this means and why it matters.
+When we say Kubernetes components are "stateless," we're highlighting a fundamental architectural principle that shapes how the entire system works.&#x20;
 
 ### What "Stateless" Means in Kubernetes
 
-In the context of Kubernetes, "stateless" means that components like the API server, scheduler, controller manager, and kubelet don't persist their operational data between restarts. They don't "remember" what they were doing if they crash and restart.
+In the context of Kubernetes, "stateless" means that components like the API server, scheduler, controller manager, and kubelet **don't persist their operational data between restarts.** They don't "remember" what they were doing if they crash and restart.
 
 Think of these components as workers who start each day with a clean slate. If a worker gets sick and needs a replacement, the new worker can step in immediately because all the information about what needs to be done is stored elsewhere (in etcd).
 
 ### Why etcd Is Different
 
-Etcd is deliberately designed as the central "memory" of the cluster. It's the only component that is **stateful** by design. It's a distributed, reliable key-value store that:
+Etcd is deliberately designed as the **central "memory" of the cluster**. It's the only component that is **stateful** by design. It's a distributed, reliable key-value store that:
 
 1. Persistently stores all cluster configuration
-2. Records the desired state of all objects in the cluster
+2. **Records the desired state of all objects in the cluster**
 3. Maintains the current observed state of those objects
 4. Provides a consistent way for components to watch for changes
 
@@ -191,13 +193,15 @@ Imagine you have a Deployment that should maintain 3 replicas of an application.
 9. Each node's kubelet watches etcd for Pods assigned to it.
 10. When a kubelet sees a Pod assigned to its node, it creates the containers.
 
-At each step, components read from etcd to determine what they should do, take action, and write results back to etcd. They don't maintain their durable record of what exists or what actions they've taken.
+At each step, components read from etcd using the API Server to determine what they should do, take action, and write results back to etcd. They don't maintain their durable record of what exists or what actions they've taken.
 
 **Basically, everything in Kubernetes works by watching etcd for stuff it has to do, doing it, and then writing the new state back into etcd.**
 
 ***
 
 #### **Scheduler**
+
+The Kubernetes scheduler is indeed a **specialized controller** that monitors for unscheduled Pods and assigns them to suitable nodes using a watch connection to the API server specifically for Pod resources.
 
 * The **scheduler is responsible** for **distributing work or containers** across multiple nodes.
 * It looks for **newly created containers** and schedules them for the available nodes.
@@ -209,9 +213,13 @@ At each step, components read from etcd to determine what they should do, take a
 
 The Kubernetes scheduler is in charge of scheduling pods onto nodes. It works like this:
 
-1. You create a pod
-2. The scheduler notices that the new pod you created doesn’t have a node assigned to it
-3. The scheduler assigns a node to the pod
+* The scheduler establishes a watch connection with the API server specifically for Pod resources.
+* It uses **field selectors in** its watch to only receive events for Pods where `spec.nodeName` is not set (unscheduled pods).
+* When a **new Pod is created in etcd**, the A**PI server sends an event through this watch connection.**
+* Upon receiving the event, the scheduler runs its scheduling algorithm to **find the best Node f**or the Pod.
+* Once it makes a decision, the scheduler updates the Pod object with the chosen `nodeName`.
+* This update is persisted to etcd through the API server.
+* The **kubelet on the selected node also has a watch connection to the API server for Pods assigned to its node,** sees the assignment, and starts creating the containers for the Pod.
 
 #### How[ the scheduler works](https://jvns.ca/blog/2017/07/27/how-does-the-kubernetes-scheduler-work/#how-the-scheduler-works-in-english) <a href="#how-the-scheduler-works-in-english" id="how-the-scheduler-works-in-english"></a>
 
@@ -234,12 +242,12 @@ This `sched.config.Error` **function call adds the pod back to the queue** of th
 
 
 
-**Worker Nodes:**
+## **Worker Nodes:**
 
 #### **Kubelet**
 
 * Worker nodes have the **kubelet** agent, which is responsible for interacting with the master.
-* Carry out actions requested by the master on the worker nodes.
+* Implemented as **DaemonSets running** on every node, carry out actions requested by the master on the worker nodes.
 * The kubelet takes a set of **PodSpecs** that are provided through various mechanisms and ensures that the containers described in those PodSpecs are running and healthy.
 * Reporting the health status of the node and each pod/container.
 * The kubelet doesn't manage containers that were not created by Kubernetes.\
@@ -249,13 +257,13 @@ This `sched.config.Error` **function call adds the pod back to the queue** of th
 
 ### Kubernetes Services: The Networking Abstraction
 
-**Services** abstract the complexity of dynamic pods and networking.
+**Service** is primarily a networking abstraction that exists as a configuration in etcd.
 
 Use **Services** for all pod-to-pod or external communications.
 
 **CoreDNS** resolves service names to service IPs.
 
-A Service in Kubernetes is a fundamental abstraction that solves a critical problem in container orchestration: **how to reliably connect to pods that are ephemeral and dynamically scheduled.** Let me walk you through what Services are and how they work.
+A Service in Kubernetes is a fundamental abstraction that solves a critical problem in container orchestration: **how to reliably connect to pods that are ephemeral and dynamically scheduled.**&#x20;
 
 Example: A service named `testsvc` can front multiple database pods.
 
@@ -267,6 +275,13 @@ Example: A service named `testsvc` can front multiple database pods.
 Pods in Kubernetes are designed to be temporary. As pods are **ephemeral**, they can be created, destroyed, or rescheduled at any time. **They're assigned IP addresses dynamically, which means a pod's IP address isn't reliable for long-term connectivity.** This presents a challenge: how do other components reliably communicate with these constantly changing pods?
 
 Services solve this problem by providing a **stable endpoint for a set of pods that perform the same function.** Think of a Service as a **persistent front door/load balancer** with a fixed address that directs traffic to whichever pods are currently running your application.
+
+A Service consists of:
+
+1. A stable virtual IP address
+2. DNS name
+3. Port configuration
+4. **Rules for routing traffic to Pods**
 
 #### Key Characteristics of Services
 
@@ -305,6 +320,25 @@ It is only accessible within the cluster (ClusterIP type)
   * Adds new pods.
   * Removes terminated pods.
   * Updates changed IPs.
+
+### Who's Responsible for Service Recovery?
+
+Unlike Pods, which need scheduling, Services don't need to be "placed" anywhere specific. Their implementation is distributed across multiple components:
+
+1. **API Server**: Maintains the Service definition in etcd
+2. **EndpointController**: Part of the controller-manager, keeps Endpoints in sync with available Pods
+3. **kube-proxy**: Implemented as DaemonSets running on every node, updates local routing rules
+4. **CoreDNS**: Provides DNS resolution for the Service name.
+
+### No Dedicated Scheduler for Services
+
+You asked specifically about whether Services need a scheduler. They don't, because:
+
+1. **Services are not scheduled to nodes like Pods are**
+2. The implementation of Services is distributed across the cluster by design
+3. kube-proxy runs on every node to ensure Service traffic can be handled anywhere
+
+When an administrator creates a Service, it becomes immediately functional once the controllers and agents respond to its creation event. **No scheduling decision is needed because the Service doesn't "run" anywhere specific.**
 
 #### **Kube Proxy**
 
@@ -408,15 +442,13 @@ This mechanism is fundamental to Kubernetes networking, allowing applications to
 
 
 
-
-
 ### **CRI (Container Runtime Interface)**
 
 * **CRI** was introduced in Kubernetes 1.5 and acts as a bridge between the kubelet and the container runtime
 * High-level container runtimes that want to integrate with Kubernetes are expected to implement CRI.
 * When kubelet wants to run the workload, it uses **CRI** to communicate with the **container runtime** running on that same node
 * In this way, CRI is simply an abstraction layer or API that allows you to switch out container runtime implementations instead of having them baked into the kubelet
-* K8s, after trying to **support multiple versions of kubelet for different container runtime environments**, and trying to keep up with the Docker interface changes, it decided to **set a standard interface (CRI)** to be implemented by all container runtimes
+* K8s, after trying to **support multiple versions of kubelet for different container runtime environments**, and trying to keep up with the Docker interface changes, decided to **set a standard interface (CRI)** to be implemented by all container runtimes
 * This is to avoid a large codebase for kubelet for supporting different Container Runtimes
 * To implement a CRI, a container runtime environment must be compliant with the **Open Container Initiative (OCI)**
 * OCI includes a set of specifications that container runtime engines must implement, and a seed container runtime engine called **runc**, a CLI tool for spawning and running containers according to the OCI specification.
@@ -425,7 +457,7 @@ This mechanism is fundamental to Kubernetes networking, allowing applications to
 
 ### What is a shim? <a href="#what-is-a-shim" id="what-is-a-shim"></a>
 
-[A container runtime shim](https://iximiuz.com/en/posts/journey-from-containerization-to-orchestration-and-beyond/#runtime-shims) is a piece of software that resides in between [a container manager (_containerd_, _cri-o_, _podman_)](https://iximiuz.com/en/posts/journey-from-containerization-to-orchestration-and-beyond/#container-management) and [a container runtime (_runc_, _crun_)](https://iximiuz.com/en/posts/journey-from-containerization-to-orchestration-and-beyond/#container-runtimes) solving the integration problem of these counterparts.
+[A container runtime shim](https://iximiuz.com/en/posts/journey-from-containerization-to-orchestration-and-beyond/#runtime-shims) is a piece of software that resides between [a container manager (_containerd_, _cri-o_, _podman_)](https://iximiuz.com/en/posts/journey-from-containerization-to-orchestration-and-beyond/#container-management) and [a container runtime (_runc_, _crun_)](https://iximiuz.com/en/posts/journey-from-containerization-to-orchestration-and-beyond/#container-runtimes), solving the integration problem of these counterparts.
 
 ### The Docker API Mismatch
 
@@ -443,7 +475,7 @@ To address this mismatch while maintaining backward compatibility, Kubernetes cr
 1. Implemented the CRI API that Kubernetes expects
 2. Translated CRI calls into Docker API calls
 3. Translated Docker API responses back into CRI responses
-4. Was built directly into the Kubernetes kubelet code
+4. It was built directly into the Kubernetes kubelet code
 
 {% code overflow="wrap" fullWidth="true" %}
 ```
@@ -455,9 +487,9 @@ Kubernetes kubelet → dockershim (built into kubelet) → Docker daemon → con
 
 #### CRI-containerd
 
-containerd is a high-level container runtime that was extracted from Docker and designed to be embedded. Eventually, containerd implemented the CRI directly, which meant:
+Containerd is a high-level container runtime that was extracted from Docker and designed to be embedded. Eventually, containerd implemented the CRI directly, which meant:
 
-1. containerd could communicate directly with Kubernetes via CRI
+1. Containerd could communicate directly with Kubernetes via CRI
 2.  The communication flow became simpler:
 
     ```
@@ -469,7 +501,7 @@ containerd is a high-level container runtime that was extracted from Docker and 
 
 After Kubernetes **removed** the built-in dockershim in version 1.24 (April 2022), Docker created a separate project called "cri-dockerd" that:
 
-1. Extracts the dockershim functionality into an external adapter
+1. Extracts the DockerShim functionality into an external adapter
 2. Continues to translate between CRI and Docker API
 3. Allows clusters to keep using Docker Engine if needed
 
@@ -485,43 +517,13 @@ Kubernetes kubelet → cri-dockerd (external shim) → Docker daemon → contain
 
 <figure><img src=".gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
 
-### Kubectl
 
-#### 🔹 Text Summary:
-
-* **Kubectl** is the command-line utility used to **interact with a Kubernetes cluster**, like a client.
-* Kubernetes is **fully controlled through its REST API**.
-* Every Kubernetes operation is exposed as an **API endpoint** and can be executed via **HTTP requests**.
-* `kubectl` interacts with the cluster by consuming these API endpoints.
-
-```shell
-kubectl run nginx                  # Deploy a pod to the cluster
-kubectl cluster-info              # View information about the cluster
-kubectl get nodes                 # List all the nodes that are part of the cluster
-kubectl get componentstatuses     # Get health status of control plane components
-
-
-```
-
-&#x20;                                                  ![](<.gitbook/assets/image (4).png>)
-
-
-
-**Kubernetes Objects:**
-
-```
-The following command successfully displays all Kubernetes objects
-
-kubectl api-resources
-```
 
 
 
 ## References:
 
-K8s
-
-
+K8s:
 
 [https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/](https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/)
 
@@ -555,12 +557,6 @@ Services:
 
 [https://www.baeldung.com/ops/kubernetes-service-types](https://www.baeldung.com/ops/kubernetes-service-types)
 
-K8 Objects:
-
-[https://kubernetes.io/docs/concepts/overview/working-with-objects/](https://kubernetes.io/docs/concepts/overview/working-with-objects/)
-
-[https://kodekloud.com/blog/kubernetes-objects/](https://kodekloud.com/blog/kubernetes-objects/)
-
 Runtime:
 
 [https://www.devoriales.com/post/318/understanding-kubernetes-container-runtime-cri-containerd-and-runc-explained](https://www.devoriales.com/post/318/understanding-kubernetes-container-runtime-cri-containerd-and-runc-explained)
@@ -568,6 +564,8 @@ Runtime:
 [https://iximiuz.com/en/posts/implementing-container-runtime-shim/](https://iximiuz.com/en/posts/implementing-container-runtime-shim/)
 
 [https://stackoverflow.com/questions/41645665/how-containerd-compares-to-runc](https://stackoverflow.com/questions/41645665/how-containerd-compares-to-runc)
+
+[https://kubernetes.io/blog/2022/02/17/dockershim-faq/](https://kubernetes.io/blog/2022/02/17/dockershim-faq/)
 
 Claude:
 

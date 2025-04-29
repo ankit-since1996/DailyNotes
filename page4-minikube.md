@@ -12,10 +12,28 @@ A tool that makes it easy to run a l**ocal, single-node, complete Kubernetes clu
 
 
 
+### Kubectl
+
+
+
+* **Kubectl** is the command-line utility used to **interact with a Kubernetes cluster**, like a client.
+* Kubernetes is **fully controlled through its REST API**.
+* Every Kubernetes operation is exposed as an **API endpoint** and can be executed via **HTTP requests**.
+* `kubectl` interacts with the cluster by consuming these API endpoints.
+
+```shell
+kubectl run nginx                  # Deploy a pod to the cluster
+kubectl cluster-info              # View information about the cluster
+kubectl get nodes                 # List all the nodes that are part of the cluster
+kubectl get componentstatuses     # Get health status of control plane components
+
+
+```
+
+&#x20;                                                  ![](<.gitbook/assets/image (4).png>)
 
 
 
 
 
-
-a
+### Kubeconfig File:
