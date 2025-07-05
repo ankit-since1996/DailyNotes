@@ -6,7 +6,7 @@ Kubernetes objects are **persistent entities** that represent the state of your 
 
 In Kubernetes, anything a user creates and **retains** is referred to as an "**Object**." These can include various items such as namespaces, [pods](https://devopscube.com/kubernetes-pod/), [deployments](https://devopscube.com/kubernetes-deployment-tutorial/), [DaemonSet](https://devopscube.com/kubernetes-daemonset/), volumes, or secrets.
 
-<figure><img src=".gitbook/assets/image (7).png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (7) (1).png" alt=""><figcaption></figcaption></figure>
 
 The **etcd** component plays an important role in persisting cluster objects, amongst other things.  Kubernetes objects are stored persistently in the cluster's etcd database. They don't disappear when pods restart or when the control plane components are restarted.
 
@@ -63,6 +63,8 @@ Normally, we call [Kubernetes YAML ](https://devopscube.com/create-kubernetes-ya
 
 
 ### PODS:
+
+
 
 ### Namespaces:
 

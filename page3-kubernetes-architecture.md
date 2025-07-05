@@ -1,12 +1,12 @@
 # Page3: Kubernetes Architecture
 
-<figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption><p><a href="https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/">https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/</a></p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1) (1) (1).png" alt=""><figcaption><p><a href="https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/">https://jvns.ca/blog/2017/06/04/learning-about-kubernetes/</a></p></figcaption></figure>
 
-<figure><img src=".gitbook/assets/image (2).png" alt=""><figcaption><p>K8s Architecture Control Plane</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (2) (1).png" alt=""><figcaption><p>K8s Architecture Control Plane</p></figcaption></figure>
 
 ## **Master Node / Control Plane**
 
-<figure><img src=".gitbook/assets/image (5).png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (5) (1).png" alt=""><figcaption></figcaption></figure>
 
 #### Key Points:
 
@@ -515,7 +515,7 @@ Kubernetes kubelet → cri-dockerd (external shim) → Docker daemon → contain
 
 ### &#x20;                             &#x20;
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (11).png" alt=""><figcaption></figcaption></figure>
 
 
 
