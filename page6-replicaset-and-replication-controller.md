@@ -19,6 +19,8 @@ Need for Replication:
 
 <figure><img src=".gitbook/assets/image (13).png" alt=""><figcaption></figcaption></figure>
 
+K8s allows us to automate deployments, scale, and manage containerized applications. Different ways to deploy our application(pods) on Kubernetes: The Latest two different resources that Kubernetes provides for deploying pods: **Deployments** and **StatefulSet**
+
 **Replication Controller:** \
 Legacy API for managing workloads that can scale horizontally. Superseded by the Deployment and ReplicaSet APIs.
 
@@ -63,6 +65,8 @@ Delete controller:
 <figure><img src=".gitbook/assets/image (7).png" alt=""><figcaption></figcaption></figure>
 
 The replication controller deploys pod replicas that have specific labels attached to them. We can use those labels as selectors in the controller, therefore making this controller t**rack/monitor** all pods with these specific labels, which helps in pods' auto-healing.
+
+A replication controller **does not support scheduling policies**, meaning you cannot provide rules for choosing cluster nodes to run pods from the managed set.
 
 
 
@@ -159,6 +163,39 @@ This is what happens here: "**If there are too many pods, the ReplicationControl
 
 <figure><img src=".gitbook/assets/image (6).png" alt=""><figcaption><p><br></p></figcaption></figure>
 
-Scale up and down of pod replicas are random ase of these three controllers
+<mark style="color:red;">**VERY IMP:**</mark> The scale-up and down of pod replicas are random in the case of these three controllers. But StatefulSet Controllers scale up and down in an ordered manner. Pod scheduling order is being maintained&#x20;
+
+**Stateless and Stateful:**
+
+**Stateless** means there is no memory of the past. Every transaction is performed as if it were being done for the very first time.
+
+**Stateful** means that there is memory of the past. Previous transactions are remembered and may affect the current transaction.
+
+```
+Stateless:
+// The state is derived by what is passed into the function.
+
+function int addOne(int number)
+{
+return number + 1;
+}
+
+Stateful:
+// The state is maintained by the function
+
+private int _number = 0; //initially zero
+function int addOne()
+{
+_number++;
+return _number;
+}
+```
+
+[**https://www.baeldung.com/ops/kubernetes-deployment-vs-statefulsets**](https://www.baeldung.com/ops/kubernetes-deployment-vs-statefulsets)
 
 Deployment vs StatefulSets:
+
+[https://stackoverflow.com/questions/41583672/kubernetes-deployments-vs-statefulsets](https://stackoverflow.com/questions/41583672/kubernetes-deployments-vs-statefulsets)
+
+[https://www.reddit.com/r/kubernetes/comments/gxto93/kubernetes\_statefulset\_simply\_explained/](https://www.reddit.com/r/kubernetes/comments/gxto93/kubernetes_statefulset_simply_explained/)
+

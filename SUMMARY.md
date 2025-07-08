@@ -7,3 +7,5 @@
 * [Page4: Minikube](page4-minikube.md)
 * [Page5: Labels & Selectors](page5-labels-and-selectors.md)
 * [Page6: ReplicaSet & Replication Controller](page6-replicaset-and-replication-controller.md)
+* [Page7: ReplicaSet](page7-replicaset.md)
+* [Page8: Deployments](page8-deployments.md)
