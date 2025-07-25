@@ -44,7 +44,7 @@ Tracks PODS health and adds/removes pods as needed to bring deployment to the de
 
 * Recreate: Not reco. Delete the old and release the new version. App downtime.
 * Rolling/Ramped Update: Default rolling strategy.
-* Blue/Green: Release a new version alongside the existing one, and then switch.
+* Blue/Green: Release a new version alongside the existing one, and then switch traffic.
 * Canary: Release a new version to a subset of users, then roll it out to the full user base.
 * A/B testing: release a new version to a subset of users in a more controlled way. Not out of the box with K8, requires Service mesh infra(Istio, Traefik, Nginx.haproxy etc)
 
@@ -93,7 +93,8 @@ spec:
           requests:
             cpu: 100m
             memory: 200Mi
-        ports:
+            
+           ports:
         - containerPort: 80
 
 
@@ -187,15 +188,58 @@ rolling-deploy-5945559446-pfwww   1/1     Running   0          18s
 
 ```
 // Some code
+kubectl rollout -h    
 
 kubectl rollout status deploy <deployment-name>
+kubectl rollout history deploy <deployment-name>
+
+# Check revision details 
+kubectl rollout history deploy <deployment-name> --revision=4
+    
+#We can rollback to a specific revision:
+kubectl rollout undo deploy <deployment-name> --to-revision=n
+
+#set deployment image imperatively (without changing the manifest file)
+kubectl set image deployment/<deployment-name> <container-name>=<image-name>
+
+#scale up
+kubectl scale deployment/<deployment-name> --replicas=10
+
+#scale down
+kubectl scale deployment/<deployment-name> --replicas=0
 ```
+
+<div><figure><img src=".gitbook/assets/image.png" alt=""><figcaption></figcaption></figure> <figure><img src=".gitbook/assets/K8.png" alt=""><figcaption></figcaption></figure></div>
+
+
+
+Once rolling deployment is complete, 100% of traffic will be served by the updated application pods.
+
+There is a case where, instead of serving 100%, we want to serve n% of users to the new app pods and the remaining to the old ones only, to load test the updated app. Require advanced configuration like Istio etc.
+
+**Blue/Green deployment**:
+
+**Release a new version(green) alongside the existing one, and then switch traffic.                                                     Instant Rollout, but at the expense of doubling resources.**
+
+Once the testing is done on v2, we will shift the traffic to the new version and later delete the old deployment/resources. This traffic shift is not automatic; we need to make service configuration changes to make it once all things are tested.
+
+
+
+**Canary deployment:** Requires Istio-like applications to implement.
+
+<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
+
+
+
+
+
+
 
 **Extra Read:**
 
 K8 Rolling Deployment Process:
 
-Here's the step-by-step process: First, Kubernetes creates new pods with your updated application image. It doesn't immediately destroy the old ones - instead, it waits for the new pods to become ready and pass their health checks. Only then does it begin terminating old pods, and it does this gradually, ensuring you always have enough healthy pods to serve traffic.
+Here's the step-by-step process: First, Kubernetes creates new pods with your updated application image. It doesn't immediately destroy the old ones - instead, it waits for the new pods to become ready and pass their health checks. Only then does it begin terminating old pods, doing so gradually to ensure you always have enough healthy pods to serve traffic.
 
 
 
@@ -205,7 +249,7 @@ The health checks in this configuration are critical - they're what make rolling
 
 **Triggering and Monitoring Rolling Updates**
 
-You can trigger a rolling update in several ways. The most common is simply updating the image tag in your deployment specification and applying the changes. When you run `kubectl apply -f deployment.yaml` after changing the image from `myapp:v1.0` to `myapp:v2.0`, Kubernetes immediately begins the rolling update process.
+You can trigger a rolling update in several ways. The most common is simply updating the image tag in your deployment specification and applying the changes. When you run `kubectl apply -f deployment.yaml`  After changing the image  `myapp:v1.0` to `myapp:v2.0`Kubernetes immediately begins the rolling update process.
 
 You can also trigger updates directly from the command line using `kubectl set image deployment/webapp-deployment webapp=myapp:v2.0`. This is particularly useful in CI/CD pipelines where you might want to programmatically deploy new versions.
 
@@ -215,7 +259,7 @@ You can also trigger updates directly from the command line using `kubectl set i
 
 kubectl set image deployment/webapp-deployment webapp=myapp:v2.0
 
-kubectl rollout status deployment/webapp-deployment
+kubectl rollout status deployment/webapp-deploy Butment
 
 #Revert/Rollback
 kubectl rollout undo deployment/webapp-deployment
@@ -228,4 +272,10 @@ kubectl rollout pause
 </code></pre>
 
 We might implement blue-green deployments or canary releases, which build upon the rolling update foundation but add additional layers of safety and control.
+
+
+
+Refs:
+
+[https://kubernetes.io/docs/concepts/workloads/controllers/deployment/](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
 

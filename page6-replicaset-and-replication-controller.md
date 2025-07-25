@@ -155,7 +155,7 @@ kubectl get rc --show-labels  #if no label provided, RC will use pod label as th
 
 \*: Create a separate pod with the same labels as the one mentioned in ReplicationController:
 
-<div><figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure> <figure><img src=".gitbook/assets/image (3).png" alt=""><figcaption></figcaption></figure></div>
+<div><figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption></figcaption></figure> <figure><img src=".gitbook/assets/image (3).png" alt=""><figcaption></figcaption></figure></div>
 
 This is what happens here: "**If there are too many pods, the ReplicationController terminates the extra pods**" ie, as we have already defined 3 at the max limit of pod replicas, so when we start a separate pod with same label as being used by controller selector, it will terminte that pod as the max replica condifition is already met.                                                                                                                                   &#x20;
 
