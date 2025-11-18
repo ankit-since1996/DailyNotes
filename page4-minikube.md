@@ -30,7 +30,7 @@ kubectl get componentstatuses     # Get health status of control plane component
 
 ```
 
-&#x20;                                                  ![](<.gitbook/assets/image (4) (1).png>)
+&#x20;                                                  ![](<.gitbook/assets/image (4) (1) (1).png>)
 
 
 

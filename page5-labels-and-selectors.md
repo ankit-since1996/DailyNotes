@@ -6,7 +6,7 @@ adds l**ogical metadata** to the Kubernetes objects like services, deployments, 
 
 Key Value pairs that can be added at creation time or later stages. Many objects can carry the same label(s).
 
-<figure><img src=".gitbook/assets/image (2).png" alt="" width="261"><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (6).png" alt="" width="261"><figcaption></figcaption></figure>
 
 **Using the Imperative way of creating labels:**
 

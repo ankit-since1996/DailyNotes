@@ -155,13 +155,13 @@ kubectl get rc --show-labels  #if no label provided, RC will use pod label as th
 
 \*: Create a separate pod with the same labels as the one mentioned in ReplicationController:
 
-<div><figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption></figcaption></figure> <figure><img src=".gitbook/assets/image (3).png" alt=""><figcaption></figcaption></figure></div>
+<div><figure><img src=".gitbook/assets/image (1) (1).png" alt=""><figcaption></figcaption></figure> <figure><img src=".gitbook/assets/image (3) (1).png" alt=""><figcaption></figcaption></figure></div>
 
 This is what happens here: "**If there are too many pods, the ReplicationController terminates the extra pods**" ie, as we have already defined 3 at the max limit of pod replicas, so when we start a separate pod with same label as being used by controller selector, it will terminte that pod as the max replica condifition is already met.                                                                                                                                   &#x20;
 
 &#x20;**\***&#x41;ll these points are valid only if we are in the **same namespace.** We can create pods with the same label in different namespaces, and they will get created.
 
-<figure><img src=".gitbook/assets/image (6).png" alt=""><figcaption><p><br></p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (6) (1).png" alt=""><figcaption><p><br></p></figcaption></figure>
 
 <mark style="color:red;">**VERY IMP:**</mark> The scale-up and down of pod replicas are random in the case of these three controllers. But StatefulSet Controllers scale up and down in an ordered manner. Pod scheduling order is being maintained&#x20;
 

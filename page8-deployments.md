@@ -209,7 +209,7 @@ kubectl scale deployment/<deployment-name> --replicas=10
 kubectl scale deployment/<deployment-name> --replicas=0
 ```
 
-<div><figure><img src=".gitbook/assets/image.png" alt=""><figcaption></figcaption></figure> <figure><img src=".gitbook/assets/K8.png" alt=""><figcaption></figcaption></figure></div>
+<div><figure><img src=".gitbook/assets/image (4).png" alt=""><figcaption></figcaption></figure> <figure><img src=".gitbook/assets/K8.png" alt=""><figcaption></figcaption></figure></div>
 
 
 
@@ -227,9 +227,11 @@ Once the testing is done on v2, we will shift the traffic to the new version and
 
 **Canary deployment:** Requires Istio-like applications to implement.
 
-<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (5).png" alt=""><figcaption></figcaption></figure>
 
+Not Possible without Istio-like tools.
 
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -278,4 +280,6 @@ We might implement blue-green deployments or canary releases, which build upon t
 Refs:
 
 [https://kubernetes.io/docs/concepts/workloads/controllers/deployment/](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+
+[https://github.com/ContainerSolutions/k8s-deployment-strategies](https://github.com/ContainerSolutions/k8s-deployment-strategies)
 
