@@ -1,6 +1,13 @@
+---
+description: >-
+  In Kubernetes, a Service is a method for exposing a network application that
+  is running as one or more Pods in your cluster.
+---
+
 # Page10: Kubernetes Services
 
-**Why** is it needed, and **What** are these?
+**Why did we require** it? What problems were we facing before this, and how did it help us? \
+And what are these?
 
 **Why are services needed?**
 
