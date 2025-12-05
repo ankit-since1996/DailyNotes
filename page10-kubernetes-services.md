@@ -11,10 +11,10 @@ And what are these?
 
 **Why are services needed?**
 
-1. How do pods communicate? Through IP or DNS name?
-2. Pods are **ephemeral**. When they die, a new pod takes its place with a **new IP** address and new name. If a deployment controller manages them, each pod will have a **random hash** appended to the name of the pod
-3. How do we rely on IP/DNS names of the pods when they change every time a pod dies and a new one replaces it with an entirely new identity?
-4. How do we **load balance** the requests among various pod replicas? If there are 3 back-end pod replicas, how do we ensure that the requests are distributed to avoid overloading a specific pod?
+1. How do pods communicate:  Through IP or DNS name
+2. Pods are **ephemeral**. When they die, a new pod takes its place with a **new IP** address and a new name. If a deployment controller manages them, each pod will have a **random hash** appended to the name of the pod
+3. So we cannot rely on the pod IP/DNS names, as they change whenever a pod dies, and a new one replaces it, with a completely new identity.
+4. How do we **load balance** the incoming requests among various pod replicas? If there are 3 back-end pod replicas, how do we ensure requests are distributed to avoid overloading a single pod?
 5. How to **expose the pods outside the cluster** to make the application available for public use?
 
 <div><figure><img src=".gitbook/assets/image (1).png" alt="" width="370"><figcaption></figcaption></figure> <figure><img src=".gitbook/assets/Screenshot-20250810153957-1372x663.png" alt="" width="375"><figcaption></figcaption></figure></div>
