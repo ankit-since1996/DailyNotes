@@ -19,9 +19,11 @@ And what are these?
 
 <div><figure><img src=".gitbook/assets/image (1).png" alt="" width="370"><figcaption></figcaption></figure> <figure><img src=".gitbook/assets/Screenshot-20250810153957-1372x663.png" alt="" width="375"><figcaption></figcaption></figure></div>
 
-What: Services are not the running components, just like other objects, like pods. It is simply a configuration defined using template files.
+<figure><img src=".gitbook/assets/Screenshot-20251206010151-1462x758.png" alt="" width="375"><figcaption></figcaption></figure>
 
-* **Kubernetes Service** is an abstraction which defines a logical set of Pods running somewhere in your cluster, that all provide the same functionality
+**What:** Services are not the running components, just like other objects, like pods. It is simply a logical configuration defined using template files.
+
+* **Kubernetes Service** is an abstraction that defines a logical set of Pods running somewhere in your cluster, which all provide the same functionality
 * Each Service is assigned a unique IP address at the time of creation.
 * This address is tied to the lifespan of the Service, and will not change while the Service is alive.
 * Pods can be configured to forward traffic to the Service, and the Service will automatically forward that traffic to any of its member pods in a load-balanced way
@@ -60,4 +62,62 @@ What: Services are not the running components, just like other objects, like pod
 
 Each of these Pods will have a label during its deployment. Service will use these labels to forward the traffic. So now, in case a new pod is being generated inside the same deployment, it will have a label attached to it, which will help the service to find these new pods and traffic the load to them.
 
-**Service will have its unique IP Address.**  <mark style="background-color:$primary;">But PodA application talks to the service with the service name instead of its IP address</mark>, so even if we create a new service with the same name, it will get a new IP address, but it will work the same way as the old one if the configuration is are same. These service IP addresses are provided by the kube-api server
+**Service will have its unique IP Address.**  <mark style="background-color:$primary;">But PodA application talks to the service with the service name instead of its IP address</mark>, so even if we create a new service with the same name, it will get a new IP address, but it will work the same way as the old one if the configuration is are same. These service IP addresses are provided by the kube-api server.
+
+ClusterIP:
+
+<figure><img src=".gitbook/assets/Screenshot-20251206142401-1447x740.png" alt=""><figcaption></figcaption></figure>
+
+Service Discovery:
+
+<figure><img src=".gitbook/assets/Screenshot-20251206135135-979x128.png" alt=""><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251206135252-1057x395.png" alt="" width="563"><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251206135451-1062x422.png" alt=""><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251206135709-1406x433.png" alt=""><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251206140028-1027x321.png" alt=""><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251206143609-1429x253.png" alt=""><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251206143717-1324x704.png" alt=""><figcaption></figcaption></figure>
+
+NodePort:
+
+<figure><img src=".gitbook/assets/Screenshot-20251206200315-1442x772.png" alt="" width="563"><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251206224932-947x413.png" alt=""><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251206225138-1454x768.png" alt=""><figcaption></figcaption></figure>
+
+LoadBalancer:
+
+<figure><img src=".gitbook/assets/Screenshot-20251206232700-1477x816.png" alt=""><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251206232807-1442x753.png" alt=""><figcaption></figcaption></figure>
+
+Headless:
+
+<figure><img src=".gitbook/assets/Screenshot-20251207003342-1016x453.png" alt=""><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251207144851-1463x665.png" alt=""><figcaption></figcaption></figure>
+
+<figure><img src=".gitbook/assets/Screenshot-20251207173409-697x787.png" alt=""><figcaption></figcaption></figure>
+
+ExternalName: Service without any pod binding to it, unlike the  other three. Access objects outside of the cluster.\
+Application needs to refer to external services outside the cluster.\
+Services in one namespace need to access services in another namespace.
+
+
+
+
+
+
+
+
+
+[https://iximiuz.com/en/categories/?category=Containers](https://iximiuz.com/en/categories/?category=Containers)
+
+[https://www.boot.dev/lessons/662d61c6-ca8d-4b97-9dbe-55b8fa1c12a9](https://www.boot.dev/lessons/662d61c6-ca8d-4b97-9dbe-55b8fa1c12a9)
