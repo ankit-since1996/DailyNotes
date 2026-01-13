@@ -242,7 +242,11 @@ References:
 [https://kubernetes.io/docs/concepts/services-networking/ingress/](https://kubernetes.io/docs/concepts/services-networking/ingress/)\
 [https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/)\
 [https://onairotich.medium.com/services-and-ingress-7afc517f2ec6](https://onairotich.medium.com/services-and-ingress-7afc517f2ec6)\
-[https://kubernetes.github.io/ingress-nginx/user-guide/basic-usage/](https://kubernetes.github.io/ingress-nginx/user-guide/basic-usage/)
+[https://kubernetes.github.io/ingress-nginx/user-guide/basic-usage/](https://kubernetes.github.io/ingress-nginx/user-guide/basic-usage/)\
+[https://engineering.clearroute.io/complete-guide-using-kubernetes-secrets-store-csi-driver-with-hashicorp-vault-1a6d104e9e5b](https://engineering.clearroute.io/complete-guide-using-kubernetes-secrets-store-csi-driver-with-hashicorp-vault-1a6d104e9e5b)\
+[https://www.ashokit.in/assets/upload-notes/01-Docker-K8S/Docker-Notes.txt](https://www.ashokit.in/assets/upload-notes/01-Docker-K8S/Docker-Notes.txt)\
+[https://www.interviewbit.com/docker-interview-questions/#docker-namespace](https://www.interviewbit.com/docker-interview-questions/#docker-namespace)\
+[https://medium.com/@techsuneel99/docker-from-beginner-to-expert-a-comprehensive-tutorial-5efec10c82ab](https://medium.com/@techsuneel99/docker-from-beginner-to-expert-a-comprehensive-tutorial-5efec10c82ab)
 
 
 
