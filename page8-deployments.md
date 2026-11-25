@@ -23,30 +23,34 @@ Rolling updates are a **deployment strategy** where you **incrementally** replac
 * **Zero downtime** - Users continue to access the service during updates
 * **Resource efficiency** - Don't need double infrastructure capacity
 
-<mark style="color:red;">K8 Deployments (Controller):</mark> [https://kubernetes.io/docs/concepts/workloads/controllers/deployment/](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+### <mark style="color:red;">K8 Deployments (Controller):</mark>&#x20;
+
+[https://kubernetes.io/docs/concepts/workloads/controllers/deployment/](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
 
 Describes the number of desired identical pod replicas and the preferred update strategy to use when updating. Rolling update is its default strategy.&#x20;
 
-Tracks PODS health and adds/removes pods as needed to bring deployment to the desired state.
+Tracks Pod health and adds/removes pods as needed to bring the deployment to the desired state.
 
 **Deployment**
 
 * **Deployment** owns and manages one or more **ReplicaSets,** and a ReplicaSet manages the **Pod** replicas
 * Deployment manages multiple ReplicaSets to support the rollback mechanism
-* Kubernetes creates a new ReplicaSet each time a new Deployment config is deployed and also keeps the old ReplicaSet, so we can rollback to the previous state with the old ReplicaSet
-* Rolling updates, rollbacks, and pausing the deployment/updates are not possibkle in RC or ReplicaSets alone.&#x20;
+* Kubernetes creates a new ReplicaSet each time a new Deployment config is deployed and also keeps the old ReplicaSet, so we can roll back to the previous state with the old ReplicaSet
+* Rolling updates, rollbacks, and pausing the deployment/updates are not possible in RC or ReplicaSets alone.&#x20;
 
-**NOTE :\*** After the complete deployment, we will not see the old objects, but the configuration will be maintained in the deployment, so that we can revert back in case of rollback.
+**NOTE :\*** After the complete deployment, we will not see the old objects, but the configuration will be maintained in the deployment, so that we can revert in case of rollback.
 
 <figure><img src=".gitbook/assets/image (19).png" alt="" width="255"><figcaption></figcaption></figure>
 
 <mark style="color:red;">Release Update Strategies</mark>: A new deployment triggers a rollout/Release.
 
-* Recreate: Not reco. Delete the old and release the new version. App downtime.
+* Recreate: Not recommended; Delete the old and release the new version. App downtime.
 * Rolling/Ramped Update: Default rolling strategy.
 * Blue/Green: Release a new version alongside the existing one, and then switch traffic.
 * Canary: Release a new version to a subset of users, then roll it out to the full user base.
 * A/B testing: release a new version to a subset of users in a more controlled way. Not out of the box with K8, requires Service mesh infra(Istio, Traefik, Nginx.haproxy etc)
+
+
 
 [https://github.com/ContainerSolutions/k8s-deployment-strategies](https://github.com/ContainerSolutions/k8s-deployment-strategies)
 

@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Page1: Introductiono](README.md)
+* [Page1: Introduction](README.md)
 * [Page2: Container Orchestration](page2-container-orchestration.md)
 * [Page3: Kubernetes Architecture](page3-kubernetes-architecture.md)
 * [Page4: Kubernetes Objects](page4-kubernetes-objects.md)
@@ -12,3 +12,5 @@
 * [Page10: Kubernetes Services](page10-kubernetes-services.md)
 * [Page11: Ingress Controller](page11-ingress-controller.md)
 * [Page101: K8/ECS/EKS](page101-k8-ecs-eks.md)
+* [Amazon EKS - Knowledge Badge](amazon-eks-knowledge-badge.md)
+* [Amazon ECS - Knowledge Badge](amazon-ecs-knowledge-badge.md)

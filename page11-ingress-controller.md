@@ -1,11 +1,13 @@
 # Page11: Ingress Controller
 
-What is reverse Proxy: Nginx, Apache, HAProxy
+What is a reverse Proxy: Nginx, Apache, HAProxy
 
 Ingress Controller vs Ingress:\
 Ingress is the set of rules, and the Ingress Controller is the program that enforces those rules.
 
-The Ingress Controller is the actual software that runs inside your Kubernetes cluster. It's a specialized load balancer and reverse proxy that continuously watches for newly created or updated Ingress resources. When it detects a new or changed Ingress, it reads the rules defined in the Ingress object and configures itself to implement those rules. Without an Ingress Controller, an Ingress resource is useless. Common Ingress Controllers include **NGINX, HAProxy, and Traefik.**
+The Ingress Controller is the actual software that runs inside your Kubernetes cluster. It's a specialized load balancer and reverse proxy that continuously watches for newly created or updated Ingress resources. \
+When it detects a new or changed Ingress, it reads the rules defined in the Ingress object and configures itself to implement those rules. Without an Ingress Controller, an Ingress resource is useless. \
+Common Ingress Controllers include **NGINX, HAProxy, and Traefik.**
 
 #### Ingress
 
@@ -20,17 +22,13 @@ You create an Ingress using a YAML file, similar to other Kubernetes objects lik
 
 
 
-
-
-
-
 Ingress Controller vs Reverse Proxy in K8 Cluster Environment.&#x20;
 
 **Ingress Controller**
 
-* **K**ubernetes-native component, **Ingress** is probably the most powerful way to expose the services outside the cluster
+* **K**ubernetes-native component; **Ingress** is probably the most powerful way to expose services outside the cluster
 * It exposes multiple services under the same IP address
-* Note, an **Ingress Controller** typically <mark style="color:$danger;">**doesn’t**</mark> eliminate the need for an external load balancer — the ingress controller adds a layer of routing and control behind the load balancer
+* Note: an **Ingress Controller** typically <mark style="color:$danger;">**doesn’t**</mark> eliminate the need for an external load balancer — the ingress controller adds a layer of routing and control behind the load balancer
 * You only pay for one load balancer IP if you are using any cloud native load balancer, and Ingress is smart enough to route various requests using simple **Host** or **URL-based** routing
 * Both **app1.com** and **app2.com** point to the same load balancer IP. The Ingress controller routes the traffic from **app1.com** to its corresponding service inside the cluster. The same is true for **app2.com**. This smart routing is made possible through **Ingress rules**
 * This way, we have avoided having multiple IPs for each exposed service.
@@ -68,7 +66,7 @@ Ingress Controller Flow:
 * **User** accessing websites → `www.app1.com` and `www.app2.com`
 * Both go through a **Cloud LB (Load Balancer)**
 * LB forwards traffic to **192.168.0.100** (cluster entry IP)
-* Inside cluster → **Ingress** routes traffic:
+* Inside the cluster → **Ingress** routes traffic:
   * `app1.com` → **Service-1** → **Pod-1** (`10.248.0.22:5000`)
   * `app2.com` → **Service-2** → **Pod-2** (`10.248.0.23:3000`)
 

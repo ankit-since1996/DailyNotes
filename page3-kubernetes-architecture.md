@@ -16,28 +16,28 @@
   * Monitors the nodes in the cluster.
   * Orchestrates containers on the worker nodes.
 * **High Availability:** Multiple master nodes can be configured to achieve **fault tolerance**.
-* **Access Point:** Master node acts as the access point for admins and users to **schedule** and **deploy** containers.
+* **Access Point:** The master node acts as the access point for admins and users to **schedule** and **deploy** containers.
 * **Components of the Control Plane/Master Node:**
   * **ETCD**
-  * **Scheduler**
-  * **Controller**
   * **API Server**
+  * **Controller Manager**
+  * **Scheduler**
 
 These four components together are known as the **Control Plane**.
 
 
 
-#### **API Server**
+### **API Server**
 
 * Exposes **Kubernetes APIs** and acts as the **frontend for the control plane**.
-* Listens to updates or queries via CLI tools like **kubectl**.
-* **Kubectl communicates** with the API Server to inform it what actions need to be performed, like **creating or deleting pods**.
+* Listens for updates or queries via CLI tools like **kubectl**.
+* **Kubectl communicates** with the API Server to inform it **what** actions need to be performed, like **creating or deleting pods**.
 * **Validates requests** and then forwards them to the appropriate components.
 * **All requests must go through the API Server**; direct access to the cluster is not allowed.
 
 ***
 
-#### **Kube-Controller Manager**
+### **Kube-Controller Manager**
 
 * **Acts as the brain** behind orchestration.
 * Responsible for **monitoring and reacting** when nodes, containers, or endpoints go down.
@@ -52,11 +52,12 @@ These four components together are known as the **Control Plane**.
 * **Job controller**
 * **Service Account and Token controllers**, etc.
 
-## The Controller Manager's Role in Maintaining Kubernetes Cluster State
+#### The Controller Manager's Role in Maintaining Kubernetes Cluster State
 
-The Controller Manager plays a crucial role in Kubernetes' self-healing architecture. Let me walk through what happens when it detects a deviation between the actual and desired state of the cluster.
+The Controller Manager plays a crucial role in Kubernetes' self-healing architecture. \
+What happens when it detects a deviation between the actual and desired state of the cluster:
 
-### The Reconciliation Loop Process
+#### The Reconciliation Loop Process
 
 When the Controller Manager detects a deviation from the desired state, it initiates what's known as a reconciliation loop. This is the fundamental pattern that drives Kubernetes' declarative model of operation.
 
@@ -64,10 +65,10 @@ When the Controller Manager detects a deviation from the desired state, it initi
 
 The Controller Manager doesn't directly observe the cluster state. Instead, **each controller within the Controller Manager watches the API Server for changes to specific resources** they're responsible for. This detection happens through:
 
-* **Watch Mechanisms**: Controllers establish watch connections to the API Server, receiving near real-time notifications when resources change.A watch connection is a persistent HTTP connection between a controller and the Kubernetes API server that uses a streaming protocol.
-* **Periodic Resync**: Even without changes, controllers periodically fetch all resources they care about to ensure nothing is missed.Periodic resync is a process where a controller, regardless of watch events received, periodically retrieves a complete fresh list of all resources it's responsible for from the API server periodically.Its a regular LIST operation to the API server.
+* **Watch Mechanisms**: Controllers establish watch connections to the API Server, receiving near real-time notifications when resources change. A watch connection is a persistent HTTP connection between a controller and the Kubernetes API server that uses a streaming protocol.
+* **Periodic Resync**: Even without changes, controllers periodically fetch all resources they care about to ensure nothing is missed. Periodic resync is a process where a controller, regardless of watch events received, periodically retrieves a complete fresh list of all resources it is responsible for, from the API server periodically. It's a regular LIST operation to the API server.
 
-If controllers have watch connections, why do they need periodic resyncs.
+If controllers have watch connections, why do they need periodic resyncs?
 
 For example, the ReplicaSet controller continuously monitors the current pod count against the desired count specified in the ReplicaSet definition.
 
@@ -92,7 +93,7 @@ For example, if a ReplicaSet should have 5 pods but only 3 are running:
 1. The ReplicaSet controller creates 2 new Pod objects via the API Server.
 2. The API Server stores these in etcd.
 3. The **Scheduler notices the unscheduled** pods and assigns them to nodes.
-4. The kubelet on the selected nodes creates the actual containers.
+4. The **kubelet** on the selected nodes creates the actual containers.
 
 #### Step 4: Handling Failures
 
@@ -147,9 +148,9 @@ This decentralized architecture allows Kubernetes to scale and maintain resilien
 
 The remarkable aspect of this design is that there is no central orchestrator. Each component reacts to changes in its domain, and together, they move the entire system toward the desired state.
 
+***
 
-
-#### **ETCD**
+## **ETCD**
 
 * ETCD is a **distributed, reliable key-value store** used by Kubernetes to **store all data** used to manage the cluster.
 * When you have **multiple nodes and multiple masters** in your cluster, etcd stores all that information across all nodes in a **distributed manner**.
@@ -193,13 +194,13 @@ Imagine you have a Deployment that should maintain 3 replicas of an application.
 9. Each node's kubelet watches etcd for Pods assigned to it.
 10. When a kubelet sees a Pod assigned to its node, it creates the containers.
 
-At each step, components read from etcd using the API Server to determine what they should do, take action, and write results back to etcd. They don't maintain their durable record of what exists or what actions they've taken.
+At each step, components read from etcd using the API Server to determine what they should do, take action, and write results back to etcd. They don't maintain a durable record of what exists or what actions they've taken.
 
 **Basically, everything in Kubernetes works by watching etcd for stuff it has to do, doing it, and then writing the new state back into etcd.**
 
 ***
 
-#### **Scheduler**
+### **Scheduler**
 
 The Kubernetes scheduler is indeed a **specialized controller** that monitors for unscheduled Pods and assigns them to suitable nodes using a watch connection to the API server specifically for Pod resources.
 
@@ -240,8 +241,6 @@ if err != nil {
 
 This `sched.config.Error` **function call adds the pod back to the queue** of things that need to be scheduled, and so it tries again.
 
-
-
 ## **Worker Nodes:**
 
 #### **Kubelet**
@@ -249,15 +248,15 @@ This `sched.config.Error` **function call adds the pod back to the queue** of th
 * Worker nodes have the **kubelet** agent, which is responsible for interacting with the master.
 * Implemented as **DaemonSets running** on every node, carry out actions requested by the master on the worker nodes.
 * The kubelet takes a set of **PodSpecs** that are provided through various mechanisms and ensures that the containers described in those PodSpecs are running and healthy.
-* Reporting the health status of the node and each pod/container.
+* **Reporting** the health status of the node and each pod/container.
 * The kubelet doesn't manage containers that were not created by Kubernetes.\
-  &#xNAN;_&#x45;x: Containers created using Docker commands_
+  _&#x45;x: Containers created using Docker commands_
 
 
 
 ### Kubernetes Services: The Networking Abstraction
 
-**Service** is primarily a networking abstraction that exists as a configuration in etcd.
+**Service** is primarily a **networking abstraction** that exists as a **configuration** in etcd.
 
 Use **Services** for all pod-to-pod or external communications.
 
@@ -267,8 +266,8 @@ A Service in Kubernetes is a fundamental abstraction that solves a critical prob
 
 Example: A service named `testsvc` can front multiple database pods.
 
-* The frontend app only needs to talk to `testsvc`, not the individual pods.
-* Service forwards traffic to the backend pods using round-robin (or similar) load balancing.
+* The frontend app only needs to talk to`testsvc`, not the individual pods.
+* The service forwards traffic to the backend pods using round-robin (or similar) load balancing.
 
 #### The Core Purpose of Services
 
@@ -289,7 +288,7 @@ A Service in Kubernetes:
 
 1. **Provides a stable virtual IP (ClusterIP)** that never changes throughout the Service's lifetime
 2. **Maintains a consistent DNS name** within the cluster
-3. **Load balances traffic** across all pods that match its selector
+3. **Load balances traffic** across all pods that match its **selector**
 4. **Automatically updates its endpoints** as pods come and go
 
 ```
@@ -309,7 +308,7 @@ This Service:
 
 Creates a stable endpoint named "my-application"
 Selects all pods with the label app: my-app
-Forward traffic from port 80 on its virtual IP to port 8080 on the pods
+Forwards traffic from port 80 on its virtual IP to port 8080 on the pods
 It is only accessible within the cluster (ClusterIP type)
 ```
 

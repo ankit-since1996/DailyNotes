@@ -8,7 +8,7 @@ description: 'Content:'
  Kubernetes Introduction
  Installation: Minikube &#x26; Kubeadm
  Kubernetes Architecture
- Understanding Kubeconfig file
+ Understanding the Kubeconfig file
  Pods vs Docker Containers
  Pods and Init Containers
  Commands and Arguments
@@ -17,8 +17,8 @@ description: 'Content:'
  Replica Sets &#x26; Deployments
  Deployment Patterns
  Namespaces
- Services: ClusterIP, NodePort, Load Balancer, Headless, Port forward
- Ingress Controllers and Resources: Path vs URL Based Routing
+ Services: ClusterIP, NodePort, Load Balancer, Headless, Port Forwarding
+ Ingress Controllers and Resources: Path vs URL-based Routing
  Volumes: emptyDir, HostPath
  Persistent Volumes: Storage Classes, PV &#x26; PVC
  StatefulSets for Stateful Applications                 
@@ -27,15 +27,15 @@ description: 'Content:'
  Kubernetes Probes: Readiness, Liveness and Startup
  Resource Limits
  Static Pods &#x26; DaemonSets
- Jobs and Cronjobs
+ Jobs and CronJobs
  Config Maps &#x26; Secrets
  RBAC: Authentication and Authorization
 <strong> Cluster Maintenance and Upgrade                                       
 </strong></code></pre>
 
-> Q; What is POD? What is a container? Can we have more than one container in a Pod? In which cases can we use multi-container Pods?&#x20;
+> Q: What is POD? What is a container? Can we have more than one container in a Pod? In which cases can we use multi-container Pods?&#x20;
 >
-> As the pod is the smallest unit in the K8 cluster, we do not have a concept of deploying containers in a Cluster. It's always a Pod deployment in a Cluster. Inside that Pod, we can have containers, and one Pod can have multiple containers in it, depending on the use case.
+> As the pod is the smallest management unit in the K8 cluster, we do not have a concept of deploying containers in a Cluster. It's always a Pod deployment in a Cluster. Inside that Pod, we can have containers, and one Pod can have multiple containers in it, depending on the use case.
 
 
 

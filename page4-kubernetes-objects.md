@@ -4,7 +4,8 @@
 
 Kubernetes objects are **persistent entities** that represent the state of your cluster.
 
-In Kubernetes, anything a user creates and **retains** is referred to as an "**Object**." These can include various items such as namespaces, [pods](https://devopscube.com/kubernetes-pod/), [deployments](https://devopscube.com/kubernetes-deployment-tutorial/), [DaemonSet](https://devopscube.com/kubernetes-daemonset/), volumes, or secrets.
+In Kubernetes, anything a user creates and **retains** is referred to as an "**Object**." \
+These can include various items such as namespaces, [pods](https://devopscube.com/kubernetes-pod/), [deployments](https://devopscube.com/kubernetes-deployment-tutorial/), DaemonSets, volumes, or secrets.
 
 <figure><img src=".gitbook/assets/image (7) (1).png" alt=""><figcaption></figcaption></figure>
 
@@ -24,7 +25,7 @@ This persistence has two important aspects:
 
 Kubernetes Deployment object persists even if all its Pods crash or all nodes fail. When the system recovers, Kubernetes will recreate the necessary resources to match the Deployment's specification.
 
-\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
+\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
 
 To **work** with Kubernetes objects—whether to create, modify, or delete them—you'll need to use the [Kubernetes API](https://kubernetes.io/docs/concepts/overview/kubernetes-api/). To create these objects, you describe **what you want (desired state)** in a **file** using either **YAML or JSON**. It is called an Object Specification.
 

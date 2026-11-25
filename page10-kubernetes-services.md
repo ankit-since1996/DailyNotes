@@ -6,8 +6,9 @@ description: >-
 
 # Page10: Kubernetes Services
 
-**Why did we require** it? What problems were we facing before this, and how did it help us? \
-And what are these?
+**Why did we require it?** \
+What problems were we facing before this, and how did it help us? \
+And what are these services?
 
 **Why are services needed?**
 
@@ -31,6 +32,9 @@ And what are these?
 * <mark style="color:$info;">A Service identifies its member Pods with a</mark> <mark style="color:$info;"></mark><mark style="color:$info;">**selector**</mark><mark style="color:$info;">. For a Pod to be a member of the Service, the Pod must have all of the</mark> <mark style="color:$info;"></mark><mark style="color:$info;">**labels**</mark> <mark style="color:$info;"></mark><mark style="color:$info;">specified in the selector of the service</mark>
 * A **label** is an arbitrary **key/value pair** that is attached to an object.
 * Service automatically removes unhealthy pods from its load balancing.
+
+
+
 *   **Services are namespaced objects in K8s:**&#x20;
 
     That means:
