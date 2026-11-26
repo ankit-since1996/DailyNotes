@@ -10,21 +10,23 @@ description: Container Management System
 * Why AWS EKS for Kubernetes Workloads
 * Introduction to Kubernetes Core Concepts
 * Introduction to AWS EKS Cluster
+
+
+
+* Deploying Microservices to Amazon EKS
 * EKS Security
 * EKS Networking
 * Observabilty
 * Autoscaling and Cost Optimization
 * GitOps
 
-
-
-
+***
 
 ### Why AWS EKS for Kubernetes Workloads
 
 Why run your Kubernetes workloads on Amazon Elastic Kubernetes Service (EKS)?
 
-Access to the vast ecosystem, Karpenter for AutoScaling
+Access to the vast ecosystem, Karpenter for Auto Scaling
 
 ***
 
@@ -60,13 +62,14 @@ etc...
 ***
 
 **Cluster:** a group of machines (called nodes) that work together to run containerized applications. Two main components:\
+\
 **Control Plane Nodes**: Kubernetes Orchestration (management) Unit.\
 Control plane nodes are responsible for orchestration-related tasks such as scaling, updating, and launching applications, essentially serving as the "**brain**" of the cluster.\
 Running Components in Control Plane Nodes:\
-• ETCD: the cluster's database storing all cluster state in key-value pairs. Stateful.\
-• kube-API Server: handles all API operations. Exposes Kubernetes APIs.\
-• kube-Controller Manager: runs controller processes. eg: node controller, deployment controller, etc.\
-• kube-Scheduler: responsible for scheduling pods on nodes
+• **ETCD:** the cluster's database storing all cluster state in key-value pairs. Stateful.\
+• **kube-API Server**: handles all API operations. Exposes Kubernetes APIs. Front door to the Kubernetes control plane. All API clients, whether they're external tools like kubectl or internal components like the scheduler or controller manager, communicate with the cluster through the API Server. Central management entity that processes and validates all REST requests. Responsible for persisting the cluster's state in etcd. Acts as a central communication hub.\
+• **kube-Controller Manager**: runs controller processes. eg node controller, deployment controller, etc. Provides **self-healing** ability to the cluster. Controllers continuously monitor the cluster's state, and when they detect a deviation from the desired state (such as when a pod fails, or when there aren't enough replicas running), they automatically take corrective action\
+• **kube-Scheduler:** responsible for scheduling pods on nodes.
 
 \
 &#x20;
@@ -74,8 +77,16 @@ Running Components in Control Plane Nodes:\
 <div align="left"><figure><img src=".gitbook/assets/image (30).png" alt="" width="563"><figcaption></figcaption></figure></div>
 
 \
-**Worker Nodes**: Kubernetes workload unit. The application lives here.\
+**Worker Nodes**: Kubernetes workload units. The application lives here.\
 Nodes/Machines where the actual application workloads run, hosting the pods that contain your containerized applications.
+
+\
+Management component running in data Plane Nodes(Worker nodes):\
+• **kubelet**: Listens for instructions from the control plane and performs the requested actions. It's responsible for starting, stopping, and maintaining application containers as directed by the control plane. By having a kubelet on each node, Kubernetes ensures that every node can be managed centrally.\
+• **kube-proxy:** Handles networking in worker nodes\
+• **Container Runtime Engine**: like containerd, Docker Engine.
+
+<br>
 
 <div align="left"><figure><img src=".gitbook/assets/image (26).png" alt="" width="563"><figcaption></figcaption></figure></div>
 
@@ -197,7 +208,7 @@ Services are not the running components; they are just like other objects, like 
 
 <div align="left"><figure><img src=".gitbook/assets/image (33).png" alt="" width="563"><figcaption><p>Without Services</p></figcaption></figure></div>
 
-<div align="left"><figure><img src=".gitbook/assets/image (34).png" alt="" width="563"><figcaption><p>With Services</p></figcaption></figure></div>
+<div align="left"><figure><img src=".gitbook/assets/image (34).png" alt="" width="563"><figcaption><p>With Services: Stable Network Abstraction layer in front of Pods</p></figcaption></figure></div>
 
 A Service only looks at **IP addresses and TCP/UDP ports**. It forwards raw network packets to Pods without inspecting the HTTP data inside.
 
@@ -254,7 +265,7 @@ a **Service** (specifically `NodePort` or `LoadBalancer`) \
 **OR**
 
 \
-an **Ingress** (or **Gateway API**) resource.&#x20;
+An **Ingress** (or **Gateway API**) resource.&#x20;
 
 **Ingress**: Sits in front of internal `ClusterIP` Services to expose multiple web apps through a **single external IP address**, routing traffic based on **domain names** (`://example.com`), and **URL paths** (`/api`, `/login`) while **handling SSL/TLS certificates.** \
 This is the standard production choice for web applications and APIs.
@@ -265,7 +276,7 @@ The controller:  for implementing them. \
 An **Ingress** is a Kubernetes YAML configuration object that defines HTTP/HTTPS routing rules (like which URL path or domain goes to which Service), while \
 an **Ingress Controller** is the actual reverse-proxy application (like NGINX, Traefik, or AWS ALB) running inside your cluster that reads those rules and routes the live network traffic.
 
-An **Ingress** is only a YAML file with routing rules (e.g. "`/api` goes to service A"). It does nothing by itself. Something has to read those rules and enforce them, and that something is the **Ingress Controller**.
+An **Ingress** is only a YAML file with routing rules (e.g.,"`/api` goes to service A"). It does nothing by itself. Something has to read those rules and enforce them, and that something is the **Ingress Controller**.
 
 **Model 1:** In-cluster controller (NGINX, Traefik, HAProxy): The controller is a Pod, so the proxy lives inside the cluster. To reach it from outside, you put a Service in front of it.
 
@@ -285,7 +296,7 @@ Internet → Cloud LB (NLB/AlB) → NodePort → NGINX Pod → Service → App P
 
 
 
-**Security**: Applications in private subnets only, while the Cloud Load Balancer is in Public.\
+**Security**: Applications in private subnets only, while the Cloud Load Balancer is public.\
 **Cost Efficiency:** Instead of paying for 20 separate Cloud Load Balancers for 20 microservices, you pay for **1 Cloud Load Balancer** that feeds into your Ingress Controller.
 
 
@@ -300,25 +311,6 @@ Path-based routing allows you to direct traffic based on URL paths (like /api or
 
 _**Fun fact:**_ \
 _When you deploy an **Ingress** on AWS EKS using the AWS Load Balancer Controller, Kubernetes literally provisions a real **AWS ALB** under the hood!_
-
-
-
-Every Kubernetes YAML file follows the same **4-part skeleton** \
-(`apiVersion`, `kind`, `metadata`, `spec`)&#x20;
-
-```
-
-apiVersion: apps/v1        # 1. A - Which version of the K8s API to use
-kind: Deployment           # 2. K - What OBJECT you want to create (Pod, Service, Deployment)
-metadata:                  # 3. M - Data that identifies this object (name, labels)
-  name: my-app
-  labels:
-    app: my-app
-    
-spec:                      # 4. S - Desired state (what you actually want K8s to build)
-  # Everything specific to the "kind" goes here
-
-```
 
 
 
@@ -338,12 +330,28 @@ kubectl delete pod <name>
 
 ***
 
-### Introduction to AWS EKS Cluster
+### Introduction to AWS EKS
 
-Cluster IAM role\
-To access other AWS services and resources your Kubernetes control plane needs an IAM role.
+AWS-managed service; manages the Control Plane. EKS removes the operational burden of maintaining Kubernetes infrastructure by automatically handling high availability, scaling, and security patches across multiple availability zones for the Control Plane Nodes.
 
-**The control plane IAM role** is only for managing cluster infrastructure (like creating load balancers or network interfaces), whereas **your application Pods on Worker Nodes** use a separate IAM role (via **IRSA** or **EKS Pod Identity**) to access AWS services like S3.\
+#### EKS's architecture: Single-tenant control
+
+<figure><img src=".gitbook/assets/image (41).png" alt=""><figcaption><p>All this is abstractedn form us, amanged by AWS solely.</p></figcaption></figure>
+
+Node Group Types: (based on **control** and **convenience**)\
+Managed Node Group:  EKS creates and manages the EC2 instances for us(including OS/AMI)\
+Self-managed Node Group: We create & manage EC2, select our preferred Instance type, OS/AMI.\
+Fargate: Serverless, on-demand. We don't have control over our EC2.
+
+**Cluster DNS:** Entry Point to the Kubernetes cluster. It points to the API server.
+
+**Launch AWS EKS Cluster:**
+
+**Cluster IAM Role/Cluster Service Role**:  \
+An IAM role that allows the EKS service to create and manage AWS resources necessary for operating your Kubernetes cluster, such as EC2 instances or load balancers. Without this role, EKS would not be able to interact with other AWS services, severely limiting its functionality.
+
+**The Control Plane IAM Role** is only for managing cluster infrastructure (like creating load balancers or network interfaces),     whereas \
+Y**our application Pods on Worker Nodes** use a separate IAM role (via **IRSA** or **EKS Pod Identity**) to access AWS services like S3.\
 **Cluster IAM Role** (for the Control Plane) is strictly for **Kubernetes infrastructure operations**, not your business logic:
 
 * Provisioning AWS Load Balancers when you create a `Service` of `type: LoadBalancer`.
@@ -367,3 +375,339 @@ Instead of giving permissions to the entire Worker Node (which would let _every_
 The Old / Less Secure Way: Worker Node **Instance Profile:** Every EC2 Worker Node also has an **EC2 Node IAM Role** (used by `kubelet` to pull Docker images from ECR and join the cluster).
 
 If you don't set up Pod Identity/IRSA, any Pod on that Worker Node falls back to using the **Worker Node's EC2 IAM Role**.
+
+
+
+### EKS Compute&#x20;
+
+#### Node group
+
+A node group is a group of EC2 instances that supply compute capacity to your Amazon EKS cluster. You can add multiple node groups to your cluster.
+
+**Node IAM role**\
+To access other AWS services and resources, your nodes need an IAM role. Choose a role with the right permissions for your Nodes.\
+The node IAM role **gives permissions to the `kubelet`** running on the node to make calls to the Kubernetes API and other AWS APIs on your behalf. This includes permissions to access **container registries** where your application containers are stored.
+
+When you create a managed node group, Amazon **EKS will create a service-linked role** for Amazon EKS to use to create and manage the managed node groups.
+
+Trusted Identity: AWS Services (Services that can assume this Role)\
+Use Case: EC2\
+\
+Policy: \
+AmazonEKSWorkerNodePolicy: Allows AWS Amazon EKS worker nodes to connect to Amazon EKS Clusters.\
+AmazonEC2ContainerRegistryReadOnly: Provides read-only access to Amazon EC2 Container Registry repositories.\
+AmazonElasticContainerRegistryPublicReadOnly: Provides read-only access to Amazon ECR Public repositories.\
+Amazon\_EKS\_CNI\_Policy: This policy provides the Amazon VPC CNI Plugin (amazon-vpc-cni-k8s) the permissions it requires to modify the IP address configuration on your EKS worker nodes. This permission set allows the CNI to list, describe, and modify Elastic Network Interfaces on your behalf. https://github.com/aws/amazon-vpc-cni-k8s<br>
+
+**NOTE**:  **Bottlerocket** is an open-source operating system(AMI) developed by AWS specifically for running containers. It's designed with security, operations, and manageability in mind, featuring a minimalist design that reduces the attack surface and improves resource utilization.
+
+#### Fargate Profile
+
+Fargate profiles let you use Fargate to run Kubernetes pods.<br>
+
+#### Kubeconfig File
+
+**`kubectl`** is the command-line tool you use to talk to a Kubernetes cluster, and \
+**`kubeconfig`** is the configuration file (typically stored at **`~/.kube/config`**) that \
+tells `kubectl` _which_ cluster to connect to, _where_ its API server is located, & _**how**_**&#x20;to authenticate you.**
+
+A `kubeconfig` file is just a YAML file organized into three main sections:
+
+* **`clusters`:** The connection details for each Kubernetes cluster you have access to (the API Server's HTTPS URL and its Certificate Authority data to verify TLS).
+* **`users`:** Your login credentials (client certificates, bearer tokens, or an `exec` plugin command like `aws eks get-token` that fetches temporary credentials).
+* **`contexts`:** The glue that pairs a **Cluster** + a **User** + a default **Namespace** under a friendly nickname (e.g., `dev-cluster` vs. `prod-cluster`), so you can switch between multiple clusters with one command.
+
+1\. How They Work Together. \
+Every time you type a command like `kubectl get pods`:
+
+1. **`kubectl`** reads your **`kubeconfig`** file to find your currently active **context**.
+2. It grabs the **API Server URL** and your **authentication credentials** (like a certificate or AWS IAM token) from that context.
+3. It sends an HTTPS REST API request to your cluster's Control Plane and displays the result in your terminal.
+
+```bash
+#Generating / Updating kubeconfig on AWS EKS
+#Once your EKS cluster finishes creating, you don't write the kubeconfig file by hand
+#—the AWS CLI generates and merges it into ~/.kube/config automatically:
+
+aws eks update-kubeconfig --region ap-south-1 --name my-cluster-name
+
+kubectl config view
+kubectl config get-contexts
+
+```
+
+#### EKS Cluster Version Upgrade
+
+Kubernetes is a very fast-paced, open-source, ongoing project. Because EKS is based on it, AWS also updates EKS regularly.  So we have to also keep our EKS cluster updated.
+
+3-step Process:\
+**Upgrade the Control Plane:**\
+Each major update brings a lot of changes. Make sure to double-check these features in the AWS EKS docs and Kubernetes docs, and fail-safe your application before updating the EKS cluster by using a **rolling update strategy** to **minimize downtime** and **maintain high availability** during the upgrade process.\
+It updates the Kubernetes version running on the A**WS-managed Control plane** using a rolling update strategy.&#x20;
+
+**Upgrade the Data Plane (Worker Node Group)**\
+No upgrade to the **Data Plane.** ie K8s components working on Worker Nodes are still using the previous version components. Kubernetes allows one backward version compatibility for Worker Node Groups compared to the Control Plane. The **one-version difference** allowance provides **flexibility** in the upgrade process, enabling you to upgrade the control plane first and then bring the nodes up to date. You must upgrade this Worker Node group version manually after the control plane version upgrade. \
+It offers **Rolling Update** as well as **Force Update**. Once updated, Old Nodes running the previous version of K8s will be replaced by New Nodes with the upgraded version. A **rolling update strategy gradually** replaces old nodes with new ones, ensuring that there's always sufficient capacity to run your workloads. This approach **minimizes downtime** and risk, as it allows you to carefully control the pace of the update and quickly roll back if issues are detected.
+
+**Upgrade the add-ons:**\
+Add-ons need to be upgraded separately to match the current Cluster version.
+
+
+
+***
+
+## Deploying Microservices to Amazon EKS
+
+#### Imperative vs Declarative
+
+**Imperative** means telling Kubernetes _how_ to do something step-by-step using direct `kubectl` commands, whereas \
+**Declarative** means defining _what_ final state you want inside YAML files and letting Kubernetes figure out how to achieve it. i.e **YAML Manifests + `kubectl apply`**
+
+**Pro Tip**: Combine Both (The Hybrid Workflow): \
+Use **imperative commands** to generate clean YAML files quickly, then manage them **declaratively**:
+
+```bash
+# Generate YAML imperatively without creating anything yet
+kubectl create deployment my-app --image=nginx --dry-run=client -o yaml > app.yaml
+
+# Deploy and manage declaratively from now on
+kubectl apply -f app.yaml
+
+```
+
+
+
+Every Kubernetes YAML file follows the same **4-part skeleton** \
+&#x20;**A-K-M-S:**  `apiVersion`, `kind`, `metadata`, `spec`
+
+```yaml
+apiVersion: apps/v1        # 1. A - Which version of the K8s API to use
+kind: Deployment           # 2. K - What OBJECT you want to create (Pod, Service, Deployment)
+metadata:                  # 3. M - Data that identifies this object (name, labels)
+  name: my-app
+  labels:
+    app: my-app
+    
+spec:                      # 4. S - Desired state (what you actually want K8s to build)
+  # Everything specific to the "kind" goes here
+
+```
+
+**Boilerplate** (Deployment + Service)    **A.K.M.S**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  replicas: 2                    # How many copies of the Pod to run
+  selector:
+    matchLabels:
+      app: web-app               # Must match the template labels below!
+      
+  template:                      # <-- This entire section is just a Pod blueprint
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: nginx              # Note the hyphen (-) for list items
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app-service
+spec:
+  type: ClusterIP                # Use LoadBalancer or NodePort for external access
+  selector:
+    app: web-app                 # Routes traffic to Pods with this label
+  ports:
+  - port: 80                     # Port exposed by the Service
+    targetPort: 80               # Port your container is listening on
+
+```
+
+**Annotations** are non-identifying metadata key-value pairs attached to Kubernetes objects to pass **extra configuration instructions to external controllers, tools, or cloud providers** (like the AWS Load Balancer Controller) that don't fit inside Kubernetes' standard `spec:` fields.
+
+**Labels vs. Annotations** (How to Know Which One to Use)\
+Both live under `metadata:` and look like `key: value` pairs, so people often mix them up. Use this simple rule:
+
+* **Labels = For Kubernetes to select & group objects** (e.g., matching a Service to Pods, or filtering with `kubectl get pods -l app=orders`).
+* **Annotations = For external controllers & humans to read extra settings** (e.g., telling AWS how to configure an ALB, attaching an SSL certificate ARN, or storing Git commit info). \
+  _&#x4B;ubernetes itself ignores annotations—only the controller watching that object reads them._
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alb-ingress
+  namespace: ecommerce
+  labels:
+    app.kubernetes.io/name: alb-ingress
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing 
+    alb.ingress.kubernetes.io/target-type: ip 
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+
+
+#Because Kubernetes' built-in Ingress spec only knows about basic host and path rules, 
+#the AWS Load Balancer Controller uses alb.ingress.kubernetes.io/... annotations to know how to build the AWS ALB:
+• kubernetes.io/ingress.class: alb (Note: In modern K8s networking.k8s.io/v1, spec.ingressClassName: alb is the newer replacement for this annotation, though AWS still supports both). Tells the AWS Load Balancer Controller: "Hey, this Ingress belongs to you—don't let NGINX touch it."
+• alb.ingress.kubernetes.io/scheme: internet-facing: Tells AWS to create a public ALB in your public subnets with a public DNS name (as opposed to internal, which creates a private VPC-only ALB).
+• alb.ingress.kubernetes.io/target-type: ip: Tells the AWS ALB to register Pod IPs directly as targets (required for Fargate and best for EKS VPC CNI), rather than routing through EC2 NodePorts (instance).
+• alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]': Tells the ALB which ports to open on its listener (e.g., HTTP on 80, or '[{"HTTP": 80}, {"HTTPS": 443}]' when adding SSL).
+
+```
+
+**3 situations when you need an annotation**:
+
+1. **You are configuring a cloud-specific feature that doesn't exist in standard Kubernetes:**
+   * _Examples:_ Making an AWS ALB `internet-facing`, attaching an AWS ACM SSL certificate (`alb.ingress.kubernetes.io/certificate-arn`), or requesting an internal AWS NLB on a `Service`.
+   * _How to find it:_ Search `"AWS Load Balancer Controller annotations"`—every single one starts with `alb.ingress.kubernetes.io/` (for Ingress) or `service.beta.kubernetes.io/aws-load-balancer-` (for Services).
+2. **You are configuring a third-party Ingress Controller's behavior:**
+   * _Examples:_ URL rewriting, rate-limiting, or max body upload size in NGINX (`nginx.ingress.kubernetes.io/rewrite-target`).
+3. **You are integrating an add-on tool (like `cert-manager` or `external-dns`):**
+   * _Examples:_ Telling `cert-manager` to auto-generate a Let's Encrypt SSL certificate (`cert-manager.io/cluster-issuer: letsencrypt-prod`).
+
+
+
+### Stateful Workload:
+
+Generally, Kubernetes is associated with running **stateless** applications.
+
+Three main purposes for preserving data in microservices: \
+persistence, \
+streaming, and \
+batch processing&#x20;
+
+Databases are the most common example for preserving data.
+
+\
+\- Three types of storage:\
+File\
+Block: EBS\
+Object <br>
+
+Pods are ephemeral/temporary in nature, and so is their data, which is in containers(also ephemeral). So, to make their data persist beyond their lifecycle, we need to store data to disk. \
+Enter **Kubernetes Volumes.** Volumes allow pods/containers to store data on disk that will persist regardless/independent of the container/pod.
+
+Volumes solve the critical problem of data persistence in containerized environments - while containers are ephemeral and lose their data when they restart, volumes provide a way to store data that persists beyond the container's lifecycle. They act as a **bridge** between the ephemeral nature of containers and the need for persistent data storage. This is crucial for applications like **databases**, **file storage systems**, or any application that needs to maintain state.
+
+<div data-with-frame="true"><figure><img src=".gitbook/assets/image (38).png" alt="" width="367"><figcaption><p>Kubernetes Volumes</p></figcaption></figure></div>
+
+\
+Kubernetes Volumes:\
+• Persistent Volumes (PVs)\
+• Persistent Volume Claims (PVCs) \
+• Storage Classes
+
+Persistent Volumes define the actual storage resources available in the cluster - they're like an inventory of available storage. PVCs, on the other hand, are requests for storage by users/applications,\
+PVs can be created in two ways: statically and dynamically. \
+**Static provisioning** consists of creating storage using a manifest file explicitly. Here, a PVC binds to an entire PV, not a "segment" or slice of it.
+
+The 1-to-1 Binding Rule (The Crucial Nuance): \
+When you use **Static Provisioning**, if an administrator manually creates a `100Gi` PV and your application's PVC only asks for `10Gi`Kubernetes will bind that PVC to the **entire `100Gi` PV**.
+
+* The remaining `90Gi` cannot be claimed by another PVC—it is effectively wasted for other applications.
+* Because of this 1-to-1 relationship, static PVs must be sized carefully to match the expected PVC requests.
+
+\
+**Dynamic Provisioning:** Don't have to explicitly create the PVs. No manual `PersistentVolume` YAML is needed ahead of time. The developer creates a `PersistentVolumeClaim` pointing to a **StorageClass (SC)**.\
+The StorageClass automatically talks to the storage provider (like AWS EBS, GCP PD, or Azure Disk), provisions a disk of the _exact_ size requested by the PVC, generates the PV object behind the scenes, and binds them together.
+
+
+
+<figure><img src=".gitbook/assets/image (39).png" alt="" width="563"><figcaption></figcaption></figure>
+
+A PV is the actual piece of physical or cloud storage in the cluster. While Pods and PVCs belong to a specific namespace, PVs exist at the cluster level.
+
+* **How it gets created:** Either an administrator creates it manually ahead of time (Static Provisioning), or the StorageClass automatically generates it the moment a PVC asks for space (Dynamic Provisioning).
+* **Lifecycle:** Once a PV is matched (or **bound**) to a PVC, it belongs exclusively to that claim until the PVC is deleted.
+
+A PVC is a request for storage made by a developer/application. Your Pod mounts the PVC, not the underlying disk directly.
+
+You attach a PVC to your Pod configuration so your app has a place to save files.\
+**What it defines:** How much space the app needs (e.g., `10Gi`), which StorageClass tier it wants, and how the volume will be accessed (`AccessModes`):&#x20;
+
+* **ReadWriteOnce (RWO):** Can be mounted as read-write by a _single_ node (standard for most databases).
+* **ReadOnlyMany (ROX):** Can be mounted as read-only by _many_ nodes simultaneously.
+* **ReadWriteMany (RWX):** Can be mounted as read-write by _many_ nodes at the same time (common for shared file uploads using NFS or EFS).
+
+StorageClass: A template that tells Kubernetes how to dynamically create storage on the fly when a PVC is requested. \
+**What it defines:** The storage provider (e.g., AWS EBS, Google Persistent Disk, Azure Disk, or local NFS), \
+performance tiers (SSD vs. HDD), **and** \
+what happens to the data when a user is done with it (`ReclaimPolicy`: either `Delete` the disk or `Retain` the data).
+
+
+
+### StatefulSets and ReplicaSets
+
+Headless services: A Headless Service (`clusterIP: None`) is a K8s Service that does not allocate a single virtual IP and **does not load-balance traffic.**  No proxying; the client connects directly to the Pod IP.\
+**Instead**, it returns the individual DNS records (IPs) of each backing Pod so clients can connect to specific Pods directly.
+
+**Why StatefulSets Need a Headless Service**\
+Imagine a 3-node database cluster (`db-0` is primary, `db-1` and `db-2` are read replicas):
+
+* With a **regular Service**, hitting `db-svc` randomly routes a write query to `db-1` (a read-only replica), causing errors.
+* With a **Headless Service** (`serviceName: db-headless`), Kubernetes creates predictable per-Pod DNS entries:
+  * `db-0.db-headless.default.svc.cluster.local` → points directly to `db-0`'s Pod IP
+  * `db-1.db-headless.default.svc.cluster.local` → points directly to `db-1`'s Pod IP
+
+When `db-0` dies and gets rescheduled with a **new IP**, CoreDNS automatically updates `db-0.db-headless...` to point to the new IP.
+
+
+
+**StatefulSets**: Kubernetes resource that allows you to manage stateful workloads using stable naming and state. Stateful apps (Databases, Kafka, ZooKeeper, Elasticsearch)
+
+Similar to ReplicaSets in that both manage the lifecycle of an identical set of Pods. **BUT**,\
+StatefulSets make sure Pods **retain their identity(in what sense?)** even after they are rescheduled, & it manage Pods with an ordered indexing; like if we have two replica Pods, they will have a suffix in an ordered approach, unlike ReplicaSets, which have unique naming.
+
+ReplicaSets share PVCs across all their Pods, whereas StatefulSets create PVCs per pod replica(again confused??)
+
+_Does a Headless Service use `kube-proxy`?_\
+**Answer:** No. Because there is no `ClusterIP`, `kube-proxy` creates no `iptables`/`IPVS` rules for it. Service discovery happens purely through **CoreDNS**.
+
+
+
+<div data-with-frame="true"><figure><img src=".gitbook/assets/image (40).png" alt="" width="563"><figcaption></figcaption></figure></div>
+
+Why does a regular Service break stateful apps??\
+**Answer**: A regular Service breaks stateful apps because it uses random load-balancing behind a single IP, treating all Pods as identical when stateful Pods actually have distinct roles and data. \
+A regular Service assumes Pods are interchangeable and stateless, so it hides their identities behind a load balancer. But StatefulSet Pods have unique roles and data, requiring a Headless Service so clients and peers can address specific Pods directly by DNS name.
+
+{% code expandable="true" %}
+```
+/Interview Answer:
+
+
+1. Asymmetric Roles (Primary vs. Replica)
+
+• The problem: In a database cluster (like PostgreSQL or MySQL), db-0 is the Primary (handles writes) and db-1/db-2 are Replicas (read-only).
+• What breaks: A regular ClusterIP Service blindly round-robins traffic across all three Pods. A WRITE request sent to the Service has a 66% chance of landing on a read-only replica and failing.
+
+2. Peer-to-Peer Discovery & Leader Election
+
+• The problem: Distributed systems (like Kafka, ZooKeeper, etcd, or Cassandra) need nodes to talk directly to each other to sync data, form a quorum, and elect a leader.
+• What breaks: Nodes must know the exact list of peers (e.g., "I am node 0, talking to node 1 and node 2"). A regular Service hides individual nodes behind one IP, so a node might accidentally talk to itself or fail to build a cluster membership list.
+
+3. Data Sharding / Partitioning
+
+• The problem: In systems like Redis Cluster or Elasticsearch, data is split across shards—for example, shard-0 holds users A–M, and shard-1 holds users N–Z.
+• What breaks: If a client queries a regular Service for User Z, the Service might route the request to shard-0, which doesn't have that data. Clients need direct addressing to hit the exact Pod holding that shard.
+
+4. Broken Replication & Split-Brain Risks
+
+• The problem: Replica Pods (db-1) need a stable target to pull transaction logs from (db-0).
+• What breaks: If db-1 tries to replicate from a regular Service IP, it could connect to another replica or itself instead of the primary, halting replication or causing cluster inconsistency.
+
+```
+{% endcode %}
+
+Headless services, StatefulSets, storage classes, and the Amazon EBS CSI driver for managing persistent storage in EKS.

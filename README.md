@@ -1,8 +1,11 @@
 ---
-description: 'Content:'
+description: >-
+  https://cloud.google.com/blog/products/containers-kubernetes/from-google-to-the-world-the-kubernetes-origin-story
 ---
 
 # Page1: Introduction
+
+### **CONTENT:**&#x20;
 
 <pre data-line-numbers><code> Container Orchestration
  Kubernetes Introduction
@@ -14,7 +17,7 @@ description: 'Content:'
  Commands and Arguments
  Multicontainer Patterns: Sidecar, Ambassador, Adapter
  Labels &#x26; Selectors
- Replica Sets &#x26; Deployments
+ ReplicaSets &#x26; Deployments
  Deployment Patterns
  Namespaces
  Services: ClusterIP, NodePort, Load Balancer, Headless, Port Forwarding
@@ -36,8 +39,4 @@ description: 'Content:'
 > Q: What is POD? What is a container? Can we have more than one container in a Pod? In which cases can we use multi-container Pods?&#x20;
 >
 > As the pod is the smallest management unit in the K8 cluster, we do not have a concept of deploying containers in a Cluster. It's always a Pod deployment in a Cluster. Inside that Pod, we can have containers, and one Pod can have multiple containers in it, depending on the use case.
-
-
-
-*
 
