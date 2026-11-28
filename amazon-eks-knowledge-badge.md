@@ -401,6 +401,10 @@ Amazon\_EKS\_CNI\_Policy: This policy provides the Amazon VPC CNI Plugin (amazon
 
 **NOTE**:  **Bottlerocket** is an open-source operating system(AMI) developed by AWS specifically for running containers. It's designed with security, operations, and manageability in mind, featuring a minimalist design that reduces the attack surface and improves resource utilization.
 
+
+
+#### Service Account:
+
 #### Fargate Profile
 
 Fargate profiles let you use Fargate to run Kubernetes pods.<br>
@@ -587,13 +591,13 @@ persistence, \
 streaming, and \
 batch processing&#x20;
 
-Databases are the most common example for preserving data.
+Databases are the most common example for preserving data. Session Data another.
 
 \
 \- Three types of storage:\
-File\
+File: \
 Block: EBS\
-Object <br>
+Object: S3<br>
 
 Pods are ephemeral/temporary in nature, and so is their data, which is in containers(also ephemeral). So, to make their data persist beyond their lifecycle, we need to store data to disk. \
 Enter **Kubernetes Volumes.** Volumes allow pods/containers to store data on disk that will persist regardless/independent of the container/pod.
@@ -603,14 +607,14 @@ Volumes solve the critical problem of data persistence in containerized environm
 <div data-with-frame="true"><figure><img src=".gitbook/assets/image (38).png" alt="" width="367"><figcaption><p>Kubernetes Volumes</p></figcaption></figure></div>
 
 \
-Kubernetes Volumes:\
+Kubernetes Volumes components:\
 • Persistent Volumes (PVs)\
 • Persistent Volume Claims (PVCs) \
 • Storage Classes
 
-Persistent Volumes define the actual storage resources available in the cluster - they're like an inventory of available storage. PVCs, on the other hand, are requests for storage by users/applications,\
+Persistent Volumes define the actual storage resources available for the cluster - they're like an inventory of available storage. PVCs, on the other hand, are requests for storage by users/applications,\
 PVs can be created in two ways: statically and dynamically. \
-**Static provisioning** consists of creating storage using a manifest file explicitly. Here, a PVC binds to an entire PV, not a "segment" or slice of it.
+**Static provisioning:** explicitly creating storage using a manifest file. Here, a PVC binds to an entire PV, not a "segment" or slice of it.
 
 The 1-to-1 Binding Rule (The Crucial Nuance): \
 When you use **Static Provisioning**, if an administrator manually creates a `100Gi` PV and your application's PVC only asks for `10Gi`Kubernetes will bind that PVC to the **entire `100Gi` PV**.
@@ -620,9 +624,7 @@ When you use **Static Provisioning**, if an administrator manually creates a `10
 
 \
 **Dynamic Provisioning:** Don't have to explicitly create the PVs. No manual `PersistentVolume` YAML is needed ahead of time. The developer creates a `PersistentVolumeClaim` pointing to a **StorageClass (SC)**.\
-The StorageClass automatically talks to the storage provider (like AWS EBS, GCP PD, or Azure Disk), provisions a disk of the _exact_ size requested by the PVC, generates the PV object behind the scenes, and binds them together.
-
-
+The StorageClass automatically talks to the storage provider (like AWS EBS, GCP PD, or Azure Disk), provisions a disk of the _**exact**_**&#x20;size** requested by the PVC, generates the PV object behind the scenes, and binds them together.
 
 <figure><img src=".gitbook/assets/image (39).png" alt="" width="563"><figcaption></figcaption></figure>
 
@@ -631,7 +633,9 @@ A PV is the actual piece of physical or cloud storage in the cluster. While Pods
 * **How it gets created:** Either an administrator creates it manually ahead of time (Static Provisioning), or the StorageClass automatically generates it the moment a PVC asks for space (Dynamic Provisioning).
 * **Lifecycle:** Once a PV is matched (or **bound**) to a PVC, it belongs exclusively to that claim until the PVC is deleted.
 
-A PVC is a request for storage made by a developer/application. Your Pod mounts the PVC, not the underlying disk directly.
+A PVC is a request for storage made by a developer/application. Your **Pod mounts the PVC**, not the underlying disk directly.
+
+A PVC and PV bind **one-to-one** and exclusively - once bound, the pairing holds until the PVC is deleted. When a PVC is deleted, the PV moves to `Released` and its **reclaim policy** decides what happens: `Delete` removes the backing volume; `Retain` keeps the PV (and data) but it will not rebind automatically - an admin must clean it and remove the old `claimRef` first. A `Released` PV that "won't bind" to a new PVC is expected behavior, not a bug.
 
 You attach a PVC to your Pod configuration so your app has a place to save files.\
 **What it defines:** How much space the app needs (e.g., `10Gi`), which StorageClass tier it wants, and how the volume will be accessed (`AccessModes`):&#x20;
@@ -652,6 +656,35 @@ what happens to the data when a user is done with it (`ReclaimPolicy`: either `D
 Headless services: A Headless Service (`clusterIP: None`) is a K8s Service that does not allocate a single virtual IP and **does not load-balance traffic.**  No proxying; the client connects directly to the Pod IP.\
 **Instead**, it returns the individual DNS records (IPs) of each backing Pod so clients can connect to specific Pods directly.
 
+Unlike Deployments or ReplicaSets where pods get random identifiers, StatefulSets maintain a stable, predictable identity for each pod, even after rescheduling. This stable identity is crucial for stateful applications because it ensures consistent network identities, stable persistent storage, and ordered deployment and scaling.\
+**Each pod** in a StatefulSet gets its **own dedicated PVC**, ensuring that even if a pod is rescheduled to a different node, it will still have access to its own unique persistent storage. This is vital for stateful applications where each instance needs its own stable storage
+
+StatefulSets are for workloads that need stable identity and persistent storage per replica. Typical examples include databases, queue brokers, and clustered stateful systems.
+
+• Stable name: Stable pod ordinal names: `app-0`, `app-1`, `app-2`
+
+• Stable DNS address: Stable DNS names through a headless service
+
+• Stable volume: One PersistentVolumeClaim per pod from `volumeClaimTemplates`
+
+• Ordered rollout and scale behavior by default
+
+A StatefulSet also provides an important safety property: **at most one pod per identity**. \
+Before replacing `app-1`, the controller must be certain the old `app-1` is gone - two processes writing the same volume or claiming the same cluster membership would corrupt data. \
+This is why StatefulSet pods on a failed node are not replaced automatically until the node object is deleted or the pod is force-deleted:
+
+
+
+
+
+<br>
+
+<br>
+
+### Required Companion: Headless Service <a href="#required-companion-headless-service" id="required-companion-headless-service"></a>
+
+StatefulSets rely on a headless Service for stable DNS records.
+
 **Why StatefulSets Need a Headless Service**\
 Imagine a 3-node database cluster (`db-0` is primary, `db-1` and `db-2` are read replicas):
 
@@ -667,9 +700,9 @@ When `db-0` dies and gets rescheduled with a **new IP**, CoreDNS automatically u
 **StatefulSets**: Kubernetes resource that allows you to manage stateful workloads using stable naming and state. Stateful apps (Databases, Kafka, ZooKeeper, Elasticsearch)
 
 Similar to ReplicaSets in that both manage the lifecycle of an identical set of Pods. **BUT**,\
-StatefulSets make sure Pods **retain their identity(in what sense?)** even after they are rescheduled, & it manage Pods with an ordered indexing; like if we have two replica Pods, they will have a suffix in an ordered approach, unlike ReplicaSets, which have unique naming.
+StatefulSets make sure Pods **retain their identity(in what sense?)** even after they are rescheduled, & it manage Pods with ordered indexing; like if we have two replica Pods, they will have a suffix in an ordered approach, unlike ReplicaSets, which have unique naming.
 
-ReplicaSets share PVCs across all their Pods, whereas StatefulSets create PVCs per pod replica(again confused??)
+ReplicaSets share PVCs across all their Pods, whereas StatefulSets create PVCs per pod replica(again, confused??)
 
 _Does a Headless Service use `kube-proxy`?_\
 **Answer:** No. Because there is no `ClusterIP`, `kube-proxy` creates no `iptables`/`IPVS` rules for it. Service discovery happens purely through **CoreDNS**.
@@ -679,14 +712,12 @@ _Does a Headless Service use `kube-proxy`?_\
 <div data-with-frame="true"><figure><img src=".gitbook/assets/image (40).png" alt="" width="563"><figcaption></figcaption></figure></div>
 
 Why does a regular Service break stateful apps??\
-**Answer**: A regular Service breaks stateful apps because it uses random load-balancing behind a single IP, treating all Pods as identical when stateful Pods actually have distinct roles and data. \
+**Answer**: A regular Service breaks stateful apps because it uses random load balancing behind a single IP, treating all Pods as identical when stateful Pods actually have distinct roles and data. \
 A regular Service assumes Pods are interchangeable and stateless, so it hides their identities behind a load balancer. But StatefulSet Pods have unique roles and data, requiring a Headless Service so clients and peers can address specific Pods directly by DNS name.
 
 {% code expandable="true" %}
 ```
 /Interview Answer:
-
-
 1. Asymmetric Roles (Primary vs. Replica)
 
 • The problem: In a database cluster (like PostgreSQL or MySQL), db-0 is the Primary (handles writes) and db-1/db-2 are Replicas (read-only).
@@ -711,3 +742,340 @@ A regular Service assumes Pods are interchangeable and stateless, so it hides th
 {% endcode %}
 
 Headless services, StatefulSets, storage classes, and the Amazon EBS CSI driver for managing persistent storage in EKS.
+
+If the workload is replaceable and does not require replica identity, use Deployment for simpler operations. Do not use StatefulSet just because an app writes logs or temp files.
+
+<pre class="language-yaml"><code class="lang-yaml"># StatefulSets must be in the manifest YAML file:
+
+specs:
+<strong>  ServiceName: &#x3C;headless-service-name>        #Headless service reference
+</strong><strong>  ...
+</strong><strong>  ...
+</strong><strong>  template:
+</strong><strong>    specs:
+</strong><strong>    ...
+</strong><strong>    ...
+</strong><strong>    volumeMounts:
+</strong><strong>    -  name: 
+</strong><strong>       mountPath:
+</strong><strong>   
+</strong><strong>  volumeClaimTemplates: 
+</strong><strong>  -  metadata: 
+</strong><strong>       name:
+</strong><strong>     specs:
+</strong>       storageClassname: 
+       accessModes: 
+       resources:
+         requests: 
+           storage: 2Gi
+</code></pre>
+
+**CSI Driver Controller:**\
+A CSI (Container Storage Interface) driver controller in Amazon EKS manages volume lifecycle operations—such as provisioning, attaching/detaching, and snapshotting—for Kubernetes workloads across EBS, EFS, and S3.&#x20;
+
+EBS CSI Driver Controller (`ebs.csi.aws.com`)
+
+* **Role:** Runs as a Kubernetes Deployment (`ebs-csi-controller`) using a service account `ebs-csi-controller-sa` with IAM permissions (e.g., `AmazonEBSCSIDriverPolicyV2`) to create, delete, attach, detach, and snapshot EBS volumes.&#x20;
+* **Storage Type & Access:** Block storage (`ReadWriteOnce`), bound to a **single Availability Zone** (AZ).&#x20;
+* **Best For:** **Single-pod stateful** workloads and **databases** (PostgreSQL, MySQL) needing low-latency block I/O.
+* **Key Notes:** Runs on EC2 nodes (not supported on Fargate or EKS Hybrid Nodes); \
+  Volume attachment/detachment can add startup latency across pod rescheduling.
+
+EFS CSI Driver Controller (`efs.csi.aws.com`)
+
+* **Role:** Deploys `efs-csi-controller` (using `efs-csi-controller-sa`) to provision volumes/access points, paired with the `efs-csi-node` DaemonSet to mount NFS file systems onto nodes.
+* **Storage Type & Access:** Elastic NFS file system supporting `ReadWriteMany` across **multiple AZs** and pods simultaneously. (EFS CSI driver v3.0.0+ also supports mounting Amazon S3 file systems).
+* **Best For:** **Shared multi-pod**, **multi-AZ** file storage, CMS platforms, and POSIX-compliant workloads.
+* **Key Notes:** Requires EFS mount targets in worker subnets and security group rules allowing NFS traffic.
+
+S3 CSI Driver Controller (`s3.csi.aws.com`)
+
+* **Role:** Integrates Amazon S3 object storage with Kubernetes PersistentVolumes/PersistentVolumeClaims via Mountpoint for Amazon S3.
+* **Storage Type & Access:** Object storage exposed as a file system interface (not POSIX-compliant, eventually consistent; traditionally static provisioning, with v2 mountpoint pods requiring capacity/headroom planning).
+* **Best For:** **Read-heavy workloads**, data lakes, **analytics**, and **large object/file access**.
+
+
+
+**Other Notables:**\
+**Amazon EC2 Instance Store CSI Driver (`lis.csi.aws.com`).**\
+**Amazon FSx for Lustre (`fsx.csi.aws.com`):**  High-performance parallel file system geared toward **HPC**, **AI/ML** training, and massive batch data processing rather than transactional databases.\
+**Longhorn:** Cloud-agnostic, Lightweight, CNCF-backed distributed **block storage** that replicates volumes across nodes and backs up snapshots to S3
+
+
+
+#### Kubernetes StatefulSets, Replication & AWS DevOps Architecture&#x20;
+
+1\. **Why Databases Need Separate Storage Per Pod.** When running databases in Kubernetes `StatefulSet`, each pod gets its own dedicated `PersistentVolumeClaim` (`volumeClaimTemplates`) rather than sharing a single volume:
+
+* **Data Corruption Prevention:** Standard databases cache data in RAM (Buffer Pools). If a secondary pod reads disk files while the primary modifies them in memory, it reads incomplete writes ("torn pages") and corrupted indexes.
+* **Split-Brain Protection:** If a network glitch promotes a secondary pod while the primary is still alive, shared storage causes both primaries to overwrite the exact same disk blocks simultaneously, permanently destroying the database.
+* **No Single Point of Failure (SPOF):** If one shared volume or availability zone fails, all replicas go down together. Separate disks ensure independent, full data copies.
+* **IOPS Isolation:** Shared volumes force read replicas to compete with the primary for disk I/O, bottlenecking critical write operations.
+* **Storage Protocol Limits:** Fast cloud block storage (AWS EBS) is **ReadWriteOnce (RWO)** (single-node attachment only). Sharing across nodes requires network storage like NFS (**ReadWriteMany / RWX**), adding unacceptable latency.
+
+2\. **How Replicas Stay Updated** (Application-Level Replication): Instead of disk sharing, databases replicate over the network via **Transaction Log Streaming** (**WAL** in Postgres, **Binlog** in MySQL, **Oplog** in MongoDB):
+
+1. Client sends a write to the **Primary** pod.
+2. Primary commits the change to its own transaction log and dedicated disk.
+3. Primary streams that tiny log entry over the network to **Read Replicas**.
+4. Replicas apply the log entry to their **own separate disks** and memory caches.
+
+3\. Replication Modes & The "Zero Lag" Myth. True physical zero lag is impossible due to network transit and disk write times, managed via two modes:
+
+| Feature            | Asynchronous _(Default)_                                                                     | Synchronous _(Near-Zero Lag)_                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Mechanism**      | Primary commits locally, confirms "Success" immediately, and streams logs in the background. | Primary sends logs and **waits** for replica confirmation before confirming "Success" to the client. |
+| **Lag**            | **Milliseconds** (typically 5ms–50ms).                                                       | **Effectively zero** for committed data.                                                             |
+| **Write Speed**    | **Fastest** (no network wait).                                                               | **Slower** (waits for network round-trip).                                                           |
+| **Data Loss Risk** | Recent unstreamed writes can be lost on primary crash.                                       | **Zero data loss** on failover.                                                                      |
+
+4\. Handling Replication Lag in Production
+
+* **Read-Your-Own-Writes:** Route a user's reads to the **Primary** for a few seconds immediately after they make an update, while routing general traffic to Replicas.
+* **Lag-Aware Proxies:** Tools like **ProxySQL** or **PgBouncer/HAProxy** monitor replica lag and temporarily remove lagging replicas from read rotation.
+* **Critical Read Routing:** Route financial/auth reads to Primary; route analytics/browsing reads to Replicas.
+
+5\. Why StatefulSets Are Still Essential
+
+* **Stable Network IDs:** Predictable DNS names (`db-0`, `db-1`) allow reliable peer discovery.
+* **Sticky Storage:** Re-attaches the exact `PersistentVolumeClaim` if a pod reschedules to another node.
+* **Ordered Operations:** Creates and updates pods sequentially (`0 -> 1 -> 2`) to prevent simultaneous downtime.
+
+***
+
+6\. Industry Standard: Managed Cloud vs. Kubernetes Operators
+
+* **Default Standard (90% of companies):** Keep stateless apps in **Kubernetes** and stateful data outside in **Managed Cloud Services** (AWS RDS, Aurora, DynamoDB, GCP AlloyDB).
+  * _Why:_ Zero Day-2 maintenance (automated patching, backups, failovers), smaller blast radius during K8s upgrades, and custom disaggregated storage (like Aurora) that avoids EBS single-AZ attachment limits.
+* **When Databases Run&#x20;**_**Inside**_**&#x20;Kubernetes (10% of companies):** Managed via **Kubernetes Operators** (e.g., **CloudNativePG** for Postgres, **Vitess** for MySQL) instead of raw StatefulSets.
+  * _Used for:_ Massive hyper-scale cost savings, strict multi-cloud/on-prem requirements, custom DB extensions, or ephemeral CI/CD test environments.
+
+7\. AWS DevOps Production Blueprint (EKS + Managed DB)
+
+* **Architecture & Networking:** Stateless apps run in **Amazon EKS** (Private Subnets); **RDS / Aurora / DynamoDB** live outside EKS in **Isolated Private Subnets**. Security Groups allow DB port traffic (`5432`/`3306`) strictly from EKS worker node Security Groups.
+* **Secretless / Secure Connections:**
+  * **IAM Database Auth (Gold Standard):** Use **EKS Pod Identity** so pods fetch short-lived (15-min) AWS STS tokens—zero static passwords.
+  * **Secret Rotation:** Store credentials in **AWS Secrets Manager** and sync them into EKS via **External Secrets Operator (ESO)**.
+* **Connection Pooling:** Place **Amazon RDS Proxy** between EKS and RDS/Aurora so rapid pod auto-scaling does not exhaust the database, `max_connections` and failovers happen up to 66% faster.
+* **IaC & CI/CD Separation:** Provision VPC, EKS, and RDS with **Terraform / OpenTofu**; deploy apps via **GitOps (ArgoCD)**; run schema migrations via **Kubernetes `Jobs`** (Flyway/Liquibase) as ArgoCD pre-sync hooks.
+
+#### Helm Package Manager
+
+A Kubernetes cluster can consist of a large number of resources depending on applications, and creating and managing so many manifest files individually (including for separate envs) for these applications can be a daunting and inflexible task. Impacts Productivity.\
+Hard to standardize the resources across envs and can easily miss best practices.
+
+HELM. It is a package manager for Kubernetes. As a package manager, Helm serves a similar purpose to tools like **apt** or **npm**, allowing you to package, distribute, and install Kubernetes applications as a single unit.&#x20;
+
+And like other package managers, it:\
+• Supports single-command installation for relevant resources.\
+• Solves relevant dependencies for the installation package<br>
+
+Templating Engine and Lifecycle Management Capabilities: It helps manage the release lifecycle of Kubernetes applications. Helm provides powerful capabilities for deploying, upgrading, rolling back, and managing the entire lifecycle of your Kubernetes applications. It also works as a template engine: it automatically generates manifest files from a set of given templates.
+
+Standardizing Kubernetes deployments. Improves productivity by reducing repetitive configuration tasks and minimizing deployment errors across environments.
+
+**Helm Charts**:  Used to package application resources and dependencies together.&#x20;
+
+Helm Chart Structure:\
+chart-name/            # Helm Chart Name \
+\-  chart.yaml           # Data and MetaData regarding the application, including dependencies\
+\-  values.yaml         # Configuration values for parameters in Helm chart templates\
+\-  templates/           # Templates used by Helm to generate manifests.\
+\-  charts/                 # Dependent charts to be used in this current chart
+
+A chart contains all the resource definitions needed to run an application, including templates, values, dependencies, and metadata. This bundling makes it possible to version, share, and deploy complex applications as a single unit
+
+<pre class="language-bash" data-expandable="true"><code class="lang-bash"><strong># Important Helm Commands
+</strong><strong>helm create &#x3C;helm-chart-name>
+</strong>
+helm template orders . -f values.yaml > orders.yaml
+
+helm install orders . -f values.yaml
+
+helm upgrade orders . -f values.yaml
+
+</code></pre>
+
+#### &#x20;Kubernetes probes - Startup, Liveness, and Readiness
+
+Health Checks for Kubernetes Application
+
+**Startup:** Has the application in the container started running?
+
+**Liveness**: Automatically checks whether the container application is in a healthy and available state or not. If not, it will trigger the restart of the container to try to resolve the issue. \
+This is different from Readiness Probes in that Liveness Probes focus on detecting and recovering from application failures rather than managing traffic flow.
+
+**Readiness**: Determines when a container application is ready to accept requests. \
+<mark style="color:red;">**IMPORTANT**</mark>: Incoming traffic **will not be forwarded** to the particular Pod until its container has passed all the readiness checks defined by the readiness probe. Readiness Probes serve as a traffic control mechanism - if a pod fails its readiness check, it's removed from the service's endpoint list, ensuring that no traffic is routed to pods that aren't ready to handle requests.
+
+```yaml
+livenessProbe:
+  tcpSocket:
+    port: {{ .Values.containerPort }}
+  initialDelaySeconds: 15
+  periodSeconds: 20 
+
+readinessProbe:
+  tcpSocket:
+    port: 3003
+  initialDelaySeconds: 5
+  periodSeconds: 10
+```
+
+
+
+### Using GitHub Actions to Deploy to EKS (OIDC)
+
+```yaml
+name: 'Deploy Orders Helm Chart to EKS'
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'helm/orders/**'
+      - '.github/workflows/main.yaml'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy (defaults to commit SHA if empty)'
+        required: false
+        default: ''
+
+permissions:
+  id-token: write   # Required for requesting the AWS OIDC JWT token
+  contents: read    # Required for actions/checkout
+
+env:
+  AWS_REGION: ${{ secrets.EKS_REGION }}
+  EKS_CLUSTER: ${{ secrets.EKS_CLUSTER }}
+  HELM_VERSION: v3.16.3
+
+jobs:
+  deploy:
+    name: Deploy Orders Service
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout helm directory
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            helm/orders
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Connect to EKS cluster
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$EKS_CLUSTER"
+
+      - name: Deploy Orders Helm chart to EKS
+        env:
+          IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
+        run: |
+          cd helm/orders
+          helm lint . -f values.yaml
+          helm upgrade --install orders . \
+            --namespace ecommerce \
+            --create-namespace \
+            --atomic \
+            --timeout 5m \
+            -f values.yaml \
+            --set image.tag="$IMAGE_TAG"
+
+      - name: Verify deployment
+        run: kubectl rollout status deployment/orders -n ecommerce --timeout=120s
+```
+
+
+
+#### EKS Networking
+
+Kubernetes Networking Model: **IP-per-pod model**\
+Each Pod gets its own **Unique Cluste-wide Private IP Address**.And, \
+Containers in that Pod share that same IP Address. uses **localhost** for internal communication with each other in case of multi container pod.\
+Any Pod can talk to any other Pod across any node without Network Address Translation (NAT).
+
+<div data-with-frame="true"><figure><img src=".gitbook/assets/image (42).png" alt=""><figcaption></figcaption></figure></div>
+
+Although, Kubernetes defines the networking model, but does not include the networking implementataion by itself. Kubernetes does not ship with built-in code to create virtual cables, assign IPs, or route packets between servers. Without an external tool installed, Pods cannot communicate across nodes.\
+It uses a **pluggable** model where the admin have the option to choose.   To bridge the gap, Kubernetes uses a standard interface called the **Container Network Interface (CNI)**. \
+Because different organizations run Kubernetes in vastly different environments (bare-metal data centers, AWS, local laptops), a single networking setup wouldn't fit everyone. Cluster administrators can pick and plug in whichever CNI plugin best fits their infrastructure like Cilium, calico or CloudNative like AWS VPC CNI/AzureCNI
+
+
+
+"**Pods are first-class citizens in a VPC network**": Traditionally, container platforms hid containers behind the host machine's IP address using port mapping and NAT—making containers invisible to the outside network.\
+When a cloud provider's CNI plugin (like the AWS VPC CNI or Azure CNI) is used, **Pods receive real, native IP addresses directly from your cloud Virtual Private Cloud (VPC) subnet**.
+
+* **No translation needed.** To the cloud network, a Pod looks just like a regular Virtual Machine (EC2 instance or VM).
+* **Direct integration.** Cloud firewalls (Security Groups), VPC routing tables, and VPC Flow Logs can interact with and monitor individual Pods directly by their IP address,
+
+**Being a "first-class citizen" means an object has its own direct identity and native privileges within a system**, rather than hiding behind a parent host.
+
+**Why Do We Need This?**\
+Making Pods first-class citizens solves four major infrastructure headaches:
+
+* **Faster Network Speed:** Without NAT, the host server doesn't have to constantly rewrite packet headers or wrap traffic inside extra virtual tunnels (overlays). Packets travel directly across the cloud network at native hardware speeds.
+* **Easy Troubleshooting:** When traffic leaves a Pod, your cloud network logs (like VPC Flow Logs) record the Pod's exact IP address.
+* **Direct Security Rules:** You can attach cloud firewalls (like AWS Security Groups) directly to a specific Pod.
+
+The <mark style="color:red;">**biggest catch is IP exhaustion**</mark>. Because every single Pod eats up a real IP address from your cloud subnet, spinning up thousands of Pods can quickly drain all available IPs in a small VPC.
+
+
+
+A **CNI (Container Network Interface)** <mark style="color:red;">**plugin**</mark> is the networking equivalent of CSI—while CSI manages **storage** for pods, CNI manages **networking** (assigning IP addresses to pods and enabling pod-to-pod and pod-to-network communication).
+
+**Amazon VPC CNI** (Default in EKS): \
+Designed by AWS speciafically for AWS EKS. Comes pre-installed with EKS cluster. Runs as DaemonSet(aws-node), ie AWS EKS ships with VPC CNI plug-in by default.
+
+* **How it works:** Assigns real **AWS VPC IP addresses** directly to Kubernetes pods using Elastic Network Interfaces (ENIs) attached to your EC2 worker nodes.
+* **Pros:** Native AWS performance (no overlay network encapsulation overhead), direct integration with VPC Security Groups (Security Groups for Pods), VPC Flow Logs, and AWS load balancers.
+* **Cons / Caveats:** Can exhaust VPC subnet IPv4 addresses quickly on large clusters (<mark style="color:red;">mitigated</mark> using **Prefix Delegation** or IPv6), and does **not natively enforce Kubernetes `NetworkPolicy`** unless enabled via its built-in eBPF network policy engine.
+
+Popular Third-Party Alternatives CNI Plugins for EKS. You can run these either in **overlay mode** (completely replacing the AWS VPC CNI to **save VPC IPs**) or in **chaining mode** (keeping AWS VPC CNI for IP allocation while adding advanced policy/observability features):  **Calico**/\
+**Cilium**: Uses **eBPF** instead of `iptables` for high-performance routing, L3–L7 Network Policies.
+
+
+
+```shellscript
+#VPC CNI runs as DaemonSets in EKS cluster
+kubectl get ds -A                            # -A for all namespaces
+
+kubectl get node
+kubectl get pod
+
+kubectl describe node
+kubectl describe pod -o wide    
+
+```
+
+
+
+Ref:\
+[https://github.com/aws/amazon-vpc-cni-k8s](https://github.com/aws/amazon-vpc-cni-k8s)\
+[https://docs.aws.amazon.com/eks/latest/userguide/pod-networking-use-cases.html](https://docs.aws.amazon.com/eks/latest/userguide/pod-networking-use-cases.html)\
+[https://docs.aws.amazon.com/eks/latest/userguide/cni-iam-role.html](https://docs.aws.amazon.com/eks/latest/userguide/cni-iam-role.html)<br>
+
+## Service Discovery:
+
+What is Service in K8s: Network Abstraction layer\
+• Exposes application over the network by providing a stable endpoint to ephemeral app Pods.\
+• Selects Pods using a selector \
+• Does the load balancing&#x20;
+
+<mark style="color:red;">**IMPORTANT**</mark>: Service CIDR Block is different and unique from Pods CIDR Block.
+
+<div data-with-frame="true"><figure><img src=".gitbook/assets/image (43).png" alt=""><figcaption></figcaption></figure></div>
+
+#### **CoreDNS:**
+
+Native K8s component that helps in service discovery.&#x20;
